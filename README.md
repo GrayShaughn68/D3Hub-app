@@ -4,5 +4,4 @@
 
 - Grayson Shaughnessy — Driver
 - Trevor Younger — Designer
-- Sam
-- tester
+- Sam — Tester
