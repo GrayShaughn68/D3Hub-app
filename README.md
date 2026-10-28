@@ -3,3 +3,4 @@
 ## Team
 
 - Grayson Shaughnessy — Driver
+- Trevor Younger — Designer
