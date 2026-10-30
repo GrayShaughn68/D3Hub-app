@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08111f" />
+    <meta name="description" content="Follow Division III sports, teams, and rankings in one place." />
+    <title>D3Hub — Division III sports, all in one place</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#/" aria-label="D3Hub home">
+          <span class="brand-mark">D3</span><span class="brand-word">HUB<span class="brand-period">.</span></span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary navigation">
+          <a class="nav-link active" href="#/">Home</a>
+          <a class="nav-link" href="#/sport/football">Rankings</a>
+          <a class="nav-link" href="#/directory">Teams</a>
+        </nav>
+        <div class="topbar-actions">
+          <label class="search-box" for="global-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+            <input id="global-search" type="search" placeholder="Find a team" autocomplete="off" />
+            <kbd>/</kbd>
+          </label>
+          <button class="icon-button menu-button" id="menu-toggle" aria-label="Open sports menu" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
+      <div class="sports-strip" id="sports-strip" aria-label="Sports navigation"></div>
+
+      <main id="app" tabindex="-1"></main>
+
+      <footer class="site-footer">
+        <a class="brand footer-brand" href="#/"><span class="brand-mark">D3</span><span class="brand-word">HUB<span class="brand-period">.</span></span></a>
+        <p>Built for the Division III community.</p>
+        <span class="footer-note">Independent concept · Demo data</span>
+      </footer>
+    </div>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
