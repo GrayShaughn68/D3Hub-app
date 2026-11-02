@@ -44,6 +44,13 @@ function footballTimestamp() {
   return Number.isNaN(date.getTime()) ? escapeHtml(value) : `Updated ${date.toLocaleString()}`;
 }
 
+function footballRetrievedAt() {
+  const value = footballData?.fetchedAt;
+  if (!value) return "Retrieval time unavailable";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? escapeHtml(value) : `Retrieved ${date.toLocaleString()}`;
+}
+
 function unwrapGame(record) {
   return record?.game || record || {};
 }
@@ -106,6 +113,30 @@ function footballAttribution() {
   return `<div class="football-attribution">Source: <a href="https://www.ncaa.com/scoreboard/football/d3" target="_blank" rel="noreferrer">NCAA.com</a> via <a href="https://github.com/henrygd/ncaa-api" target="_blank" rel="noreferrer">ncaa-api</a> · ${footballTimestamp()}</div>`;
 }
 
+function footballRankingsAttribution() {
+  const updated = footballData?.rankingsUpdated || "Update unavailable";
+  return `<div class="football-attribution">Source: <a href="${escapeHtml(footballData?.rankingsUrl || "https://www.ncaa.com/rankings/football/d3/regional-rankings")}" target="_blank" rel="noreferrer">NCAA.com DIII football regional rankings</a> via <a href="https://github.com/henrygd/ncaa-api" target="_blank" rel="noreferrer">ncaa-api</a> · ${escapeHtml(updated)} · ${footballRetrievedAt()}</div>`;
+}
+
+function regionalRankingGroups() {
+  const groups = new Map();
+  (footballData?.rankings || []).forEach((entry) => {
+    const region = entry.region || "Region unavailable";
+    if (!groups.has(region)) groups.set(region, []);
+    groups.get(region).push(entry);
+  });
+  return [...groups].map(([region, entries]) => [region, entries.sort((a, b) => a.rank - b.rank)]);
+}
+
+function footballRankingsMarkup(preview = false) {
+  if (footballLoading && !footballData) return `<div class="empty-state">Loading NCAA regional rankings…</div>`;
+  if (!footballData && footballError) return `<div class="empty-state">Football rankings are temporarily unavailable. Please refresh to try again.</div>`;
+  if (!footballData?.rankingsAvailable || !footballData.rankings?.length) return `<div class="empty-state">NCAA regional rankings are temporarily unavailable. Scores and schedules are still available.</div>`;
+  const groups = regionalRankingGroups();
+  const shownGroups = preview ? groups.map(([region, entries]) => [region, entries.slice(0, 1)]) : groups;
+  return `<div class="regional-ranking-list">${shownGroups.map(([region, entries]) => `<section class="regional-ranking-region"><h3>${escapeHtml(region)}</h3><div class="regional-ranking-head"><span>Rank</span><span>School</span><span>In-division</span><span>NPI</span></div>${entries.map((entry) => `<div class="regional-ranking-row"><span class="regional-rank-number">${escapeHtml(entry.rank)}</span><strong>${escapeHtml(entry.school)}</strong><span>${escapeHtml(entry.record)}</span><span>${escapeHtml(entry.npi)}</span></div>`).join("")}</section>`).join("")}</div>`;
+}
+
 function footballGamesMarkup(limit = Infinity) {
   if (footballLoading && !footballData) return `<div class="empty-state">Loading verified Division III football data…</div>`;
   if (!footballData && footballError) return `<div class="empty-state">Football data is temporarily unavailable. Please refresh to try again.</div>`;
@@ -129,8 +160,12 @@ function footballTeamsMarkup() {
 function refreshFootballViews() {
   document.querySelectorAll("[data-football-games]").forEach((element) => { element.innerHTML = footballGamesMarkup(Number(element.dataset.gameLimit) || Infinity); });
   document.querySelectorAll("[data-football-teams]").forEach((element) => { element.innerHTML = footballTeamsMarkup(); });
+  document.querySelectorAll("[data-football-rankings]").forEach((element) => { element.innerHTML = footballRankingsMarkup(element.dataset.rankingPreview === "true"); });
   document.querySelectorAll("[data-football-attribution]").forEach((element) => { element.innerHTML = footballAttribution(); });
+  document.querySelectorAll("[data-football-rankings-attribution]").forEach((element) => { element.innerHTML = footballRankingsAttribution(); });
   document.querySelectorAll("[data-football-timestamp]").forEach((element) => { element.textContent = footballTimestamp(); });
+  document.querySelectorAll("[data-ranking-count]").forEach((element) => { element.textContent = footballData?.rankings?.length || "—"; });
+  document.querySelectorAll("[data-ranking-updated]").forEach((element) => { element.textContent = footballData?.rankingsUpdated || "Unavailable"; });
   document.querySelectorAll("[data-football-error]").forEach((element) => { element.hidden = !footballError; });
 }
 
@@ -165,7 +200,7 @@ function navMarkup() {
 
 function setPrimaryNav(page) {
   document.querySelectorAll(".nav-link").forEach((link) => link.classList.remove("active"));
-  const target = page === "home" ? "#/" : page === "directory" || page === "teams" ? "#/directory" : "#/sport/football";
+  const target = page === "home" ? "#/" : page === "directory" || page === "teams" ? "#/directory" : "#/sport/football/rankings";
   document.querySelector(`.nav-link[href="${target}"]`)?.classList.add("active");
 }
 
@@ -184,7 +219,7 @@ function renderHome() {
 
     <div class="home-grid">
       <section>
-        <div class="section-heading"><div><h2>Choose your sport</h2><p>Football scores are sourced live; other sport sections are labeled demo.</p></div><a class="text-link" href="#/sport/football">Football scoreboard <span class="arrow">→</span></a></div>
+        <div class="section-heading"><div><h2>Choose your sport</h2><p>Football scores and NCAA regional rankings are sourced live; other sport sections are labeled demo.</p></div><a class="text-link" href="#/sport/football">Football scoreboard <span class="arrow">→</span></a></div>
         <div class="sport-grid">${D3_SPORTS.map((sport) => `<a class="sport-card" href="#/sport/${sport.id}" data-symbol="${sport.symbol}"><div class="sport-card-top"><span class="sport-icon">${icon(sport.icon)}</span><span class="sport-card-meta">${sport.season} · DIII</span></div><span class="sport-card-title">${sport.name}</span><span class="sport-card-bottom"><span>${sport.id === "football" ? "Scores & schedule" : "Demo section"}</span><span>↗</span></span></a>`).join("")}</div>
       </section>
       <section>
@@ -193,21 +228,24 @@ function renderHome() {
       </section>
     </div>
 
-      <section class="rank-section"><div class="section-heading"><div><h2>Football rankings</h2><p>Verified Division III rankings are not available from this feed.</p></div><a class="text-link" href="#/sport/football">Scores & schedule <span class="arrow">→</span></a></div><div class="rank-preview"><div class="empty-state">D3Hub is not publishing sample football rankings as real data. View the verified scoreboard and schedule instead.</div></div></section>
+      <section class="rank-section"><div class="section-heading"><div><h2>Football regional rankings</h2><p>NCAA Division III regional rank, in-division record, and NPI.</p></div><a class="text-link" href="#/sport/football/rankings">All regional rankings <span class="arrow">→</span></a></div><div class="rank-preview"><div data-football-rankings data-ranking-preview="true">${footballRankingsMarkup(true)}</div><div class="snapshot-foot" data-football-rankings-attribution>${footballRankingsAttribution()}</div></div></section>
   </div></div>`;
   loadFootballData();
 }
 
-function renderSport(sportId, view = "rankings") {
+function renderSport(sportId, view) {
   const sport = sportById(sportId);
   const teams = sportData[sport.id];
+  if (!view) view = sport.id === "football" ? "scores" : "rankings";
   setPrimaryNav("rankings");
   document.querySelectorAll(".sport-pill").forEach((pill) => pill.classList.toggle("active", pill.getAttribute("href") === `#/sport/${sport.id}`));
   if (sport.id === "football") {
+    const showingRankings = view === "rankings";
+    const showingTeams = view === "teams";
     app.innerHTML = `<div class="page"><div class="container">
       <div class="breadcrumbs"><a href="#/">Home</a><span>/</span><span>Football</span></div>
-      <header class="sport-page-header"><div class="sport-page-title-wrap"><span class="sport-large-icon">${icon(sport.icon)}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>Division III · ${sport.season} season</div><h1>Football</h1><p>Scores and schedules provided by NCAA.com. D3Hub does not currently have a verified DIII football ranking feed.</p></div></div><div class="sport-tabs" role="tablist" aria-label="Football sections"><button class="sport-tab ${view === "rankings" ? "active" : ""}" data-view="rankings" role="tab" aria-selected="${view === "rankings"}">Scores & schedule</button><button class="sport-tab ${view === "teams" ? "active" : ""}" data-view="teams" role="tab" aria-selected="${view === "teams"}">Teams in feed</button></div></header>
-      <div class="content-layout"><section class="panel ranking-panel"><div class="panel-title-row"><h2>${view === "teams" ? "Teams in current feed" : "DIII Football games"}</h2><small>Division III · NCAA feed</small></div>${view === "teams" ? `<div data-football-teams>${footballTeamsMarkup()}</div>` : `<div data-football-games>${footballGamesMarkup()}</div>`}<div class="rank-preview-foot" data-football-attribution>${footballAttribution()}</div></section><aside class="ranking-side"><section class="panel side-card"><h3>Data status</h3><p>Scores, teams, and game states come directly from the DIII football scoreboard. Unknown scores or statuses are shown as unavailable.</p><div class="season-line"><span>Division</span><strong>NCAA Division III</strong></div><div class="season-line"><span>Source update</span><strong data-football-timestamp>${footballTimestamp()}</strong></div></section></aside></div>
+      <header class="sport-page-header"><div class="sport-page-title-wrap"><span class="sport-large-icon">${icon(sport.icon)}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>Division III · ${sport.season} season</div><h1>Football</h1><p>Scores and schedules come from the NCAA scoreboard; regional rankings are published by NCAA.com.</p></div></div><div class="sport-tabs" role="tablist" aria-label="Football sections"><button class="sport-tab ${view === "scores" ? "active" : ""}" data-view="scores" role="tab" aria-selected="${view === "scores"}">Scores & schedule</button><button class="sport-tab ${showingRankings ? "active" : ""}" data-view="rankings" role="tab" aria-selected="${showingRankings}">Regional rankings</button><button class="sport-tab ${showingTeams ? "active" : ""}" data-view="teams" role="tab" aria-selected="${showingTeams}">Teams in feed</button></div></header>
+      <div class="content-layout"><section class="panel ranking-panel"><div class="panel-title-row"><h2>${showingRankings ? "DIII Football regional rankings" : showingTeams ? "Teams in current feed" : "DIII Football games"}</h2><small>${showingRankings ? "Six regions · NCAA rankings" : "Division III · NCAA feed"}</small></div>${showingRankings ? `<div data-football-rankings>${footballRankingsMarkup()}</div><div class="rank-preview-foot" data-football-rankings-attribution>${footballRankingsAttribution()}</div>` : showingTeams ? `<div data-football-teams>${footballTeamsMarkup()}</div><div class="rank-preview-foot" data-football-attribution>${footballAttribution()}</div>` : `<div data-football-games>${footballGamesMarkup()}</div><div class="rank-preview-foot" data-football-attribution>${footballAttribution()}</div>`}</section><aside class="ranking-side"><section class="panel side-card"><h3>${showingRankings ? "Ranking details" : "Data status"}</h3><p>${showingRankings ? "NCAA regional rankings are grouped by region. Rank numbers restart in each region; they are not a national Top 25." : "Scores, teams, and game states come directly from the DIII football scoreboard. Unknown scores or statuses are shown as unavailable."}</p><div class="season-line"><span>Division</span><strong>NCAA Division III</strong></div>${showingRankings ? `<div class="season-line"><span>Ranked teams</span><strong data-ranking-count>${footballData?.rankings?.length || "—"}</strong></div><div class="season-line"><span>Ranking update</span><strong data-ranking-updated>${escapeHtml(footballData?.rankingsUpdated || "Unavailable")}</strong></div>` : `<div class="season-line"><span>Source update</span><strong data-football-timestamp>${footballTimestamp()}</strong></div>`}</section></aside></div>
     </div></div>`;
     document.querySelectorAll(".sport-tab").forEach((button) => button.addEventListener("click", () => renderSport(sport.id, button.dataset.view)));
     loadFootballData();
@@ -292,7 +330,7 @@ function route() {
     document.querySelectorAll(".sport-pill").forEach((pill) => pill.classList.remove("active"));
     return renderHome();
   }
-  if (parts[0] === "sport" && parts[1]) return renderSport(parts[1]);
+  if (parts[0] === "sport" && parts[1]) return renderSport(parts[1], parts[2]);
   if (parts[0] === "team" && parts[1] && parts[2]) return renderTeam(parts[1], parts[2]);
   if (parts[0] === "directory") return renderDirectory();
   return renderNotFound();

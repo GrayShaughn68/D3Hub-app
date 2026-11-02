@@ -8,9 +8,9 @@
 
 ## Football data
 
-The DIII football scoreboard is loaded from NCAA.com through the community-maintained [ncaa-api](https://github.com/henrygd/ncaa-api). D3Hub requests it through `api/football.js`, which keeps the external API call server-side and caches responses at the hosting edge for 45 seconds. No API key is required or exposed in browser code.
+The DIII football scoreboard and regional rankings are loaded from NCAA.com through the community-maintained [ncaa-api](https://github.com/henrygd/ncaa-api). D3Hub requests both through `api/football.js`, which keeps external API calls server-side and caches responses at the hosting edge for 45 seconds. No API key is required or exposed in browser code.
 
-The feed supplies the current DIII scoreboard window, including upcoming games and available scores. Game status is shown from the feed; unknown status or missing scores are labeled unavailable. D3Hub does not currently have a verified football ranking, full season team roster, record, or statistics feed, so those values are not invented. Other sport sections still contain clearly labeled illustrative demo content.
+The scoreboard supplies the current DIII football games, including upcoming schedules and available scores. Game status is shown from the feed; unknown status or missing scores are labeled unavailable. The rankings tab shows NCAA regional ranks, in-division records, and NPI grouped into the six NCAA regions; these regional ranks are not a national Top 25. D3Hub does not currently have a verified full season team roster or team statistics feed, so those values are not invented. Other sport sections still contain clearly labeled illustrative demo content.
 
 The upstream service is community maintained, subject to its availability and request limits. The website shows the source and the upstream update time when supplied (otherwise the proxy retrieval time).
 

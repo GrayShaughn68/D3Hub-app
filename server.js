@@ -4,7 +4,8 @@ const path = require("node:path");
 
 const root = __dirname;
 const port = Number(process.env.PORT) || 4174;
-const apiUrl = "https://ncaa-api.henrygd.me/scoreboard/football/d3";
+const scoreboardUrl = "https://ncaa-api.henrygd.me/scoreboard/football/d3";
+const rankingsUrl = "https://ncaa-api.henrygd.me/rankings/football/d3/regional-rankings";
 const publicFiles = new Map([
   ["/", ["index.html", "text/html; charset=utf-8"]],
   ["/index.html", ["index.html", "text/html; charset=utf-8"]],
@@ -17,19 +18,49 @@ let cachedPayload = null;
 let cachedAt = 0;
 let pendingFetch = null;
 
+function normalizeRegionalRankings(payload) {
+  if (!payload || !Array.isArray(payload.data)) return null;
+  let region = "";
+  return payload.data.flatMap((row) => {
+    const label = row["REGIONAL RANK"] || "";
+    if (!row.SCHOOL && label.startsWith("Region")) {
+      region = label;
+      return [];
+    }
+    if (!row.SCHOOL || !/^\d+$/.test(label)) return [];
+    return [{ region, rank: Number(label), school: row.SCHOOL, record: row["IN-DIVISION RECORD"] || "Unavailable", npi: row.NPI || "Unavailable" }];
+  });
+}
+
 async function footballPayload() {
   if (cachedPayload && Date.now() - cachedAt < 45_000) return cachedPayload;
   if (pendingFetch) return pendingFetch;
 
   pendingFetch = (async () => {
-    const upstream = await fetch(apiUrl, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!upstream.ok) throw new Error(`Score source returned ${upstream.status}`);
-    const payload = await upstream.json();
+    const [scoreResult, rankingResult] = await Promise.allSettled([
+      fetch(scoreboardUrl, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) }),
+      fetch(rankingsUrl, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) })
+    ]);
+    if (scoreResult.status !== "fulfilled" || !scoreResult.value.ok) throw new Error("Score source unavailable");
+    const payload = await scoreResult.value.json();
     if (!payload || !Array.isArray(payload.games)) throw new Error("Score source returned an unexpected response");
-    cachedPayload = { ...payload, source: "NCAA.com via ncaa-api.henrygd.me", fetchedAt: new Date().toISOString() };
+
+    let rankingPayload = null;
+    if (rankingResult.status === "fulfilled" && rankingResult.value.ok) {
+      try { rankingPayload = await rankingResult.value.json(); } catch (error) { rankingPayload = null; }
+    }
+    const rankings = normalizeRegionalRankings(rankingPayload);
+    cachedPayload = {
+      ...payload,
+      rankings: rankings || [],
+      rankingsTitle: rankingPayload?.title || "DIII Football Regional Rankings",
+      rankingsUpdated: rankingPayload?.updated || "Update unavailable",
+      rankingsAvailable: rankings !== null,
+      rankingsUrl: "https://www.ncaa.com/rankings/football/d3/regional-rankings",
+      source: "NCAA.com via ncaa-api.henrygd.me",
+      rankingsSource: "NCAA.com via ncaa-api.henrygd.me",
+      fetchedAt: new Date().toISOString()
+    };
     cachedAt = Date.now();
     return cachedPayload;
   })();

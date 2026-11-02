@@ -114,6 +114,18 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
 .snapshot-foot { padding: 10px 15px; border-top: 1px solid var(--line); color: #718096; font-size: 9px; }
 .rank-section { margin-top: 30px; }
 .rank-preview { overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.regional-ranking-region + .regional-ranking-region { border-top: 1px solid var(--line); }
+.regional-ranking-region h3 { margin: 0; padding: 12px 16px 8px; color: #f07882; font: 700 16px "Barlow Condensed", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.regional-ranking-head, .regional-ranking-row { display: grid; grid-template-columns: 60px minmax(120px, 1fr) 120px 80px; align-items: center; gap: 10px; padding: 10px 16px; }
+.regional-ranking-head { color: #748398; background: #0f1a2a; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.regional-ranking-row { min-height: 42px; border-top: 1px solid rgba(210,225,244,.07); color: #bdc8d5; font-size: 10px; }
+.regional-ranking-row strong { color: #f1f4f8; font-weight: 700; }
+.regional-rank-number { color: #ff8890; font: 700 17px "Barlow Condensed", sans-serif; }
+.rank-preview .regional-ranking-region h3 { padding-top: 11px; }
+.rank-preview .regional-ranking-region + .regional-ranking-region { border-top: 1px solid var(--line); }
+.rank-preview .regional-ranking-head { display: none; }
+.rank-preview .regional-ranking-row { grid-template-columns: 42px minmax(120px,1fr) 100px 70px; padding: 8px 14px; }
+.rank-preview .regional-ranking-row .regional-rank-number { font-size: 15px; }
 .rank-preview-head, .rank-row { display: grid; grid-template-columns: 52px minmax(160px, 1fr) repeat(3, 75px); align-items: center; gap: 10px; padding: 11px 16px; }
 .rank-preview-head { color: #748398; background: #0f1a2a; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .rank-row { min-height: 55px; border-top: 1px solid rgba(210,225,244,.07); font-size: 11px; }
@@ -247,6 +259,10 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
   .sport-card-meta { font-size: 8px; }
   .rank-section { margin-top: 25px; }
   .rank-preview-head, .rank-row { grid-template-columns: 35px minmax(110px, 1fr) repeat(3, 45px); gap: 5px; padding-left: 10px; padding-right: 10px; }
+  .regional-ranking-head, .regional-ranking-row { grid-template-columns: 38px minmax(100px,1fr) 76px 55px; gap: 5px; padding-left: 10px; padding-right: 10px; font-size: 8px; }
+  .regional-ranking-head { font-size: 7px; }
+  .regional-ranking-region h3 { padding-left: 10px; }
+  .rank-preview .regional-ranking-row { grid-template-columns: 32px minmax(90px,1fr) 78px 52px; gap: 4px; padding-left: 10px; padding-right: 10px; font-size: 8px; }
   .rank-preview-head { font-size: 7px; }
   .rank-row { padding-top: 8px; padding-bottom: 8px; }
   .rank-team-link { gap: 7px; font-size: 9px; }
