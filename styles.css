@@ -101,16 +101,6 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
 .team-mini { width: 25px; height: 25px; flex: none; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.13); border-radius: 4px; font: 700 10px "Barlow Condensed", sans-serif; }
 .snapshot-score { min-width: 46px; color: white; font: 700 12px "Barlow Condensed", sans-serif; text-align: center; white-space: nowrap; }
 .snapshot-score small { display: block; margin-top: 2px; color: #7f8da1; font: 500 8px "DM Sans", sans-serif; }
-.snapshot-team a { color: inherit; text-decoration: none; }
-.snapshot-team a:hover { color: #fff; text-decoration: underline; }
-.status-live { color: #ed6464 !important; font-weight: 800 !important; }
-.status-final { color: #aeb9c8 !important; }
-.status-scheduled { color: #72a8ff !important; }
-.football-attribution { color: #8b99ab; font-size: 10px; line-height: 1.6; }
-.football-attribution a { color: #b5c8e2; text-decoration: underline; text-underline-offset: 2px; }
-.football-attribution a:hover { color: #fff; }
-.panel [data-football-games] .snapshot-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-.panel [data-football-games] .snapshot-score { max-width: 170px; white-space: normal; }
 .snapshot-foot { padding: 10px 15px; border-top: 1px solid var(--line); color: #718096; font-size: 9px; }
 .rank-section { margin-top: 30px; }
 .rank-preview { overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }

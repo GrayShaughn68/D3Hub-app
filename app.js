@@ -2,11 +2,7 @@ const app = document.getElementById("app");
 const sportsStrip = document.getElementById("sports-strip");
 const searchInput = document.getElementById("global-search");
 const searchResults = document.getElementById("search-results");
-const sportData = Object.fromEntries(D3_SPORTS.filter((sport) => sport.id !== "football").map((sport) => [sport.id, demoTeamsForSport(sport.id)]));
-let footballData = null;
-let footballLoading = false;
-let footballError = false;
-let footballRequest = null;
+const sportData = Object.fromEntries(D3_SPORTS.map((sport) => [sport.id, demoTeamsForSport(sport.id)]));
 
 const iconPaths = {
   football: '<path d="M4.5 7.2c3.8-3.8 11.2-4.2 15-1.7 2.4 3.8 2.1 11.2-1.7 15-3.8 2.4-11.2 2.1-15-1.7-2.4-3.8-2.1-11.2 1.7-15Z"/><path d="m8 16 8-8M9.4 10.7l3.9 3.9m-5.7-2.1 3.9 3.9m.6-9.3 3.9 3.9"/>',
@@ -37,106 +33,6 @@ function demoBanner() {
   return `<div class="demo-note"><strong>DEMO DATA</strong><span>Rankings, records and scores are illustrative.</span></div>`;
 }
 
-function footballTimestamp() {
-  const value = footballData?.updated_at || footballData?.fetchedAt;
-  if (!value) return "Update time unavailable";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? escapeHtml(value) : `Updated ${date.toLocaleString()}`;
-}
-
-function gameTeams(game) {
-  const side = (team) => ({
-    name: team?.names?.short || team?.names?.char6 || team?.name || team?.teamName || "Team unavailable",
-    score: team?.score,
-    id: team?.seo || team?.slug || team?.id || team?.names?.short || team?.name || ""
-  });
-  return { away: side(game.away), home: side(game.home) };
-}
-
-function teamSlug(name) {
-  return String(name).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function gameStatus(game) {
-  const raw = String(game.gameState || game.status || "").toLowerCase();
-  if (["pre", "scheduled", "upcoming"].includes(raw)) return "Scheduled";
-  if (["final", "post", "complete", "completed"].includes(raw)) return "Final";
-  if (["live", "in", "inprogress", "in-progress", "halftime", "half", "period", "delayed"].includes(raw)) return "Live";
-  return "Status unavailable";
-}
-
-function gameTime(game) {
-  const time = game.startTime || game.startDate || game.date || game.gameDate;
-  if (!time) return "Start time unavailable";
-  const date = new Date(time);
-  return Number.isNaN(date.getTime()) ? escapeHtml(time) : date.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-function footballGameRow(game) {
-  const { away, home } = gameTeams(game);
-  const status = gameStatus(game);
-  const hasBothScores = away.score !== undefined && away.score !== null && away.score !== "" && home.score !== undefined && home.score !== null && home.score !== "";
-  const score = status === "Scheduled" ? gameTime(game) : status !== "Status unavailable" && hasBothScores ? `${away.score} – ${home.score}` : "Score unavailable";
-  const stateClass = status === "Live" ? "status-live" : status === "Final" ? "status-final" : status === "Scheduled" ? "status-scheduled" : "";
-  return `<div class="snapshot-row"><div class="snapshot-team"><a href="#/team/football/${encodeURIComponent(teamSlug(away.name))}">${escapeHtml(away.name)}</a></div><div class="snapshot-score">${escapeHtml(score)}<small class="${stateClass}">${escapeHtml(status.toUpperCase())}</small></div><div class="snapshot-team"><a href="#/team/football/${encodeURIComponent(teamSlug(home.name))}">${escapeHtml(home.name)}</a></div></div>`;
-}
-
-function footballAttribution() {
-  return `<div class="football-attribution">Source: <a href="https://www.ncaa.com/scoreboard/football/d3" target="_blank" rel="noreferrer">NCAA.com</a> via <a href="https://github.com/henrygd/ncaa-api" target="_blank" rel="noreferrer">ncaa-api</a> · ${footballTimestamp()}</div>`;
-}
-
-function footballGamesMarkup(limit = Infinity) {
-  if (footballLoading && !footballData) return `<div class="empty-state">Loading verified Division III football data…</div>`;
-  if (!footballData && footballError) return `<div class="empty-state">Football data is temporarily unavailable. Please refresh to try again.</div>`;
-  const games = footballData?.games || [];
-  if (!games.length) return `<div class="empty-state">No football games are listed by the data source right now.</div>`;
-  return games.slice(0, limit).map(footballGameRow).join("");
-}
-
-function footballTeamsMarkup() {
-  if (footballLoading && !footballData) return `<div class="empty-state">Loading verified Division III football data…</div>`;
-  if (!footballData && footballError) return `<div class="empty-state">Football data is temporarily unavailable. Please refresh to try again.</div>`;
-  const teams = new Map();
-  (footballData?.games || []).forEach((game) => {
-    const { away, home } = gameTeams(game);
-    [away, home].forEach((team) => { if (team.name !== "Team unavailable") teams.set(teamSlug(team.name), team.name); });
-  });
-  if (!teams.size) return `<div class="empty-state">No teams are listed by the data source right now.</div>`;
-  return `<div class="directory-grid">${[...teams].sort((a, b) => a[1].localeCompare(b[1])).map(([slug, name]) => `<a class="directory-card" href="#/team/football/${encodeURIComponent(slug)}"><span class="team-mini">FB</span><span><strong>${escapeHtml(name)}</strong><small>NCAA Division III · current scoreboard</small></span></a>`).join("")}</div>`;
-}
-
-function refreshFootballViews() {
-  document.querySelectorAll("[data-football-games]").forEach((element) => { element.innerHTML = footballGamesMarkup(Number(element.dataset.gameLimit) || Infinity); });
-  document.querySelectorAll("[data-football-teams]").forEach((element) => { element.innerHTML = footballTeamsMarkup(); });
-  document.querySelectorAll("[data-football-attribution]").forEach((element) => { element.innerHTML = footballAttribution(); });
-  document.querySelectorAll("[data-football-error]").forEach((element) => { element.hidden = !footballError; });
-}
-
-function loadFootballData() {
-  if (footballRequest) return footballRequest;
-  footballLoading = true;
-  footballError = false;
-  refreshFootballViews();
-  footballRequest = fetch("/api/football", { headers: { Accept: "application/json" } })
-    .then((response) => {
-      if (!response.ok) throw new Error("Football API unavailable");
-      return response.json();
-    })
-    .then((payload) => {
-      if (!Array.isArray(payload.games)) throw new Error("Unexpected football response");
-      footballData = payload;
-    })
-    .catch(() => { footballError = true; })
-    .finally(() => {
-      footballLoading = false;
-      footballRequest = null;
-      refreshFootballViews();
-      const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-      if (parts[0] === "team" && parts[1] === "football" && parts[2]) renderFootballTeam(parts[2]);
-    });
-  return footballRequest;
-}
-
 function navMarkup() {
   sportsStrip.innerHTML = `<span class="sports-strip-label">Sports</span>${D3_SPORTS.map((sport) => `<a class="sport-pill" href="#/sport/${sport.id}">${sport.shortName}</a>`).join("")}`;
 }
@@ -149,31 +45,57 @@ function setPrimaryNav(page) {
 
 function renderHome() {
   setPrimaryNav("home");
+  const featureSport = sportById("football");
+  const featureTeams = sportData[featureSport.id];
+  const featuredRows = featureTeams.slice(0, 5);
   app.innerHTML = `<div class="page"><div class="container">
     <section class="hero">
       <div class="hero-copy">
         <div class="eyebrow"><span class="eyebrow-dot"></span>All Division III. All in one place.</div>
         <h1>Every game.<br><span>Every campus.</span></h1>
         <p>Your front row seat to Division III sports. Explore team rankings, find your school, and keep up with the stories across DIII.</p>
-        <div class="hero-actions"><a class="button button-primary" href="#/sport/football">Explore football scores <span class="arrow">→</span></a><a class="button button-secondary" href="#/directory">Browse teams</a></div>
+        <div class="hero-actions"><a class="button button-primary" href="#/sport/football">Explore the Top 25 <span class="arrow">→</span></a><a class="button button-secondary" href="#/directory">Browse teams</a></div>
       </div>
       <div class="hero-art" aria-hidden="true"><span class="hero-number">III</span><div class="hero-ball"><svg viewBox="0 0 100 100"><path d="M16 27c19-13 47-14 67-2 13 20 12 48-2 66-20 13-48 12-66-2C2 69 2 42 16 27Z"/><path d="m28 70 44-44M32 40l27 28M40 32l27 28"/></svg></div><span class="hero-art-caption">The DIII community</span></div>
     </section>
 
     <div class="home-grid">
       <section>
-        <div class="section-heading"><div><h2>Choose your sport</h2><p>Football scores are sourced live; other sport sections are labeled demo.</p></div><a class="text-link" href="#/sport/football">Football scoreboard <span class="arrow">→</span></a></div>
-        <div class="sport-grid">${D3_SPORTS.map((sport) => `<a class="sport-card" href="#/sport/${sport.id}" data-symbol="${sport.symbol}"><div class="sport-card-top"><span class="sport-icon">${icon(sport.icon)}</span><span class="sport-card-meta">${sport.season} · DIII</span></div><span class="sport-card-title">${sport.name}</span><span class="sport-card-bottom"><span>${sport.id === "football" ? "Scores & schedule" : "Demo section"}</span><span>↗</span></span></a>`).join("")}</div>
+        <div class="section-heading"><div><h2>Choose your sport</h2><p>Find rankings, teams and season updates.</p></div><a class="text-link" href="#/sport/football">All rankings <span class="arrow">→</span></a></div>
+        <div class="sport-grid">${D3_SPORTS.map((sport) => `<a class="sport-card" href="#/sport/${sport.id}" data-symbol="${sport.symbol}"><div class="sport-card-top"><span class="sport-icon">${icon(sport.icon)}</span><span class="sport-card-meta">${sport.season} · DIII</span></div><span class="sport-card-title">${sport.name}</span><span class="sport-card-bottom"><span>View Top 25</span><span>↗</span></span></a>`).join("")}</div>
       </section>
       <section>
-        <div class="section-heading"><div><h2>DIII Football</h2><p>Scores and upcoming games from NCAA.com.</p></div><span class="live-label">Scoreboard</span></div>
-        <div class="snapshot-card"><div class="snapshot-head"><strong>Football scoreboard</strong></div><div data-football-games data-game-limit="5">${footballGamesMarkup(5)}</div><div class="snapshot-foot" data-football-attribution>${footballAttribution()}</div></div>
+        <div class="section-heading"><div><h2>Around DIII</h2><p>Sample scoreboard snapshot.</p></div><span class="live-label">Scores</span></div>
+        <div class="snapshot-card"><div class="snapshot-head"><strong>Game day</strong><select class="snapshot-sport-select" id="snapshot-sport" aria-label="Choose a sport">${D3_SPORTS.map((sport) => `<option value="${sport.id}" ${sport.id === featureSport.id ? "selected" : ""}>${sport.shortName}</option>`).join("")}</select></div><div id="snapshot-games">${snapshotMarkup(featureTeams, featureSport.id)}</div><div class="snapshot-foot">Illustrative demo scores · Official data not connected</div></div>
       </section>
     </div>
 
-      <section class="rank-section"><div class="section-heading"><div><h2>Football rankings</h2><p>Verified Division III rankings are not available from this feed.</p></div><a class="text-link" href="#/sport/football">Scores & schedule <span class="arrow">→</span></a></div><div class="rank-preview"><div class="empty-state">D3Hub is not publishing sample football rankings as real data. View the verified scoreboard and schedule instead.</div></div></section>
+    <section class="rank-section"><div class="section-heading"><div><h2>Top 25 spotlight</h2><p>Start with the DIII Football sample rankings.</p></div><a class="text-link" href="#/sport/football">Full Top 25 <span class="arrow">→</span></a></div><div class="rank-preview">${rankPreviewMarkup(featureTeams.slice(0, 5))}<div class="rank-preview-foot">${demoBanner()}<a class="text-link" href="#/sport/football">See all 25 <span class="arrow">→</span></a></div></div></section>
   </div></div>`;
-  loadFootballData();
+  document.getElementById("snapshot-sport").addEventListener("change", (event) => {
+    document.getElementById("snapshot-games").innerHTML = snapshotMarkup(sportData[event.target.value], event.target.value);
+  });
+}
+
+function demoScore(sportId, index) {
+  const scores = sportId.includes("basketball") ? [[82, 74], [76, 69], [91, 84]]
+    : sportId.includes("soccer") ? [[2, 1], [3, 0], [1, 1]]
+      : sportId === "baseball" ? [[7, 4], [5, 3], [10, 6]]
+        : sportId === "softball" ? [[5, 2], [3, 4], [8, 1]]
+          : sportId === "womens-volleyball" ? [[3, 1], [3, 2], [0, 3]]
+            : [[24, 13], [35, 20], [29, 27]];
+  return scores[index % scores.length].join(" - ");
+}
+
+function snapshotMarkup(teams, sportId) {
+  return teams.slice(0, 3).map((team, index) => {
+    const opponent = teams[(index + 7) % teams.length];
+    return `<div class="snapshot-row"><div class="snapshot-team">${teamBadge(team)}<span>${team.school}</span></div><div class="snapshot-score">${demoScore(sportId, index)}<small>FINAL · DEMO</small></div><div class="snapshot-team">${teamBadge(opponent)}<span>${opponent.school}</span></div></div>`;
+  }).join("");
+}
+
+function rankPreviewMarkup(teams) {
+  return `<div class="rank-preview-head"><span>Rank</span><span>Team</span><span>Record</span><span>PF</span><span>PA</span></div>${teams.map((team) => `<div class="rank-row"><span class="rank-num">${String(team.rank).padStart(2, "0")}</span><a class="rank-team-link" href="#/team/football/${team.id}">${teamBadge(team)}<span class="rank-school">${team.school}<span class="rank-mascot">${team.mascot}</span></span></a><span class="rank-stat">${team.record}</span><span class="rank-stat">${team.pointsFor}</span><span class="rank-stat">${team.pointsAgainst}</span></div>`).join("")}`;
 }
 
 function renderSport(sportId, view = "rankings") {
@@ -181,16 +103,6 @@ function renderSport(sportId, view = "rankings") {
   const teams = sportData[sport.id];
   setPrimaryNav("rankings");
   document.querySelectorAll(".sport-pill").forEach((pill) => pill.classList.toggle("active", pill.getAttribute("href") === `#/sport/${sport.id}`));
-  if (sport.id === "football") {
-    app.innerHTML = `<div class="page"><div class="container">
-      <div class="breadcrumbs"><a href="#/">Home</a><span>/</span><span>Football</span></div>
-      <header class="sport-page-header"><div class="sport-page-title-wrap"><span class="sport-large-icon">${icon(sport.icon)}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>Division III · ${sport.season} season</div><h1>Football</h1><p>Scores and schedules provided by NCAA.com. D3Hub does not currently have a verified DIII football ranking feed.</p></div></div><div class="sport-tabs" role="tablist" aria-label="Football sections"><button class="sport-tab ${view === "rankings" ? "active" : ""}" data-view="rankings" role="tab" aria-selected="${view === "rankings"}">Scores & schedule</button><button class="sport-tab ${view === "teams" ? "active" : ""}" data-view="teams" role="tab" aria-selected="${view === "teams"}">Teams in feed</button></div></header>
-      <div class="content-layout"><section class="panel ranking-panel"><div class="panel-title-row"><h2>${view === "teams" ? "Teams in current feed" : "DIII Football games"}</h2><small>Division III · NCAA feed</small></div>${view === "teams" ? `<div data-football-teams>${footballTeamsMarkup()}</div>` : `<div data-football-games>${footballGamesMarkup()}</div>`}<div class="rank-preview-foot" data-football-attribution>${footballAttribution()}</div></section><aside class="ranking-side"><section class="panel side-card"><h3>Data status</h3><p>Scores, teams, and game states come directly from the DIII football scoreboard. Unknown scores or statuses are shown as unavailable.</p><div class="season-line"><span>Division</span><strong>NCAA Division III</strong></div><div class="season-line"><span>Source update</span><strong>${footballTimestamp()}</strong></div></section></aside></div>
-    </div></div>`;
-    document.querySelectorAll(".sport-tab").forEach((button) => button.addEventListener("click", () => renderSport(sport.id, button.dataset.view)));
-    loadFootballData();
-    return;
-  }
   app.innerHTML = `<div class="page"><div class="container">
     <div class="breadcrumbs"><a href="#/">Home</a><span>/</span><span>${sport.name}</span></div>
     <header class="sport-page-header"><div class="sport-page-title-wrap"><span class="sport-large-icon">${icon(sport.icon)}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>Division III · ${sport.season} season</div><h1>${sport.name}</h1><p>${sport.description}</p></div></div><div class="sport-tabs" role="tablist" aria-label="${sport.name} sections"><button class="sport-tab ${view === "rankings" ? "active" : ""}" data-view="rankings" role="tab" aria-selected="${view === "rankings"}">Top 25</button><button class="sport-tab ${view === "teams" ? "active" : ""}" data-view="teams" role="tab" aria-selected="${view === "teams"}">Teams</button></div></header>
@@ -209,7 +121,6 @@ function renderSportTeams(sport, teams) {
 
 function renderTeam(sportId, teamId) {
   const sport = sportById(sportId);
-  if (sport.id === "football") return renderFootballTeam(teamId);
   const team = teamById(sport.id, teamId);
   if (!team) return renderNotFound();
   setPrimaryNav("teams");
@@ -221,29 +132,6 @@ function renderTeam(sportId, teamId) {
     <section class="team-hero"><div class="team-heading"><span class="team-crest" style="background:${team.color}" aria-hidden="true">${team.abbreviation}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>NCAA Division III · ${sport.name}</div><h1>${team.school}</h1><p>${team.mascot} · ${team.location}</p></div><div class="team-summary"><div class="summary-stat"><strong>${team.record}</strong><span>Record</span></div><div class="summary-stat"><strong>#${team.rank}</strong><span>Sample rank</span></div><div class="summary-stat"><strong>${team.streak}</strong><span>Streak</span></div></div></div></section>
     <div class="team-content"><section class="panel"><div class="panel-title-row"><h2>Schedule & results</h2><small>${sport.season} season · sample</small></div>${games.map((game, index) => `<div class="schedule-row"><span class="schedule-date">${game.date}</span><span class="schedule-opponent">${teamBadge(game.opponent)}<span><strong>${index < 1 ? "vs." : "at"} ${game.opponent.school}</strong><small>${game.opponent.mascot} · NCAA Division III</small></span></span><span class="schedule-result">${game.result}<small>${game.note}</small></span></div>`).join("")}<div class="rank-preview-foot">${demoBanner()}</div></section><aside class="ranking-side"><section class="panel side-card"><h3>Season stats</h3><div class="team-side-stats"><div class="team-side-stat"><strong>${team.pointsFor}</strong><span>For / game</span></div><div class="team-side-stat"><strong>${team.pointsAgainst}</strong><span>Ag / game</span></div><div class="team-side-stat"><strong>${team.streak}</strong><span>Current streak</span></div><div class="team-side-stat"><strong>#${team.rank}</strong><span>Sample rank</span></div></div></section><section class="panel side-card"><h3>Team information</h3><div class="season-line"><span>School</span><strong>${team.school}</strong></div><div class="season-line"><span>Nickname</span><strong>${team.mascot}</strong></div><div class="season-line"><span>Location</span><strong>${team.location}</strong></div><div class="season-line"><span>Sport</span><strong>${sport.name}</strong></div><div class="season-line"><span>Division</span><strong>NCAA DIII</strong></div></section><a class="button button-secondary" href="#/sport/${sport.id}">← Back to ${sport.shortName} Top 25</a></aside></div>
   </div></div>`;
-}
-
-function renderFootballTeam(teamId) {
-  setPrimaryNav("teams");
-  const matches = (footballData?.games || []).filter((game) => {
-    const { away, home } = gameTeams(game);
-    return teamSlug(away.name) === teamId || teamSlug(home.name) === teamId;
-  });
-  const teamName = matches.length ? (() => {
-    const { away, home } = gameTeams(matches[0]);
-    return teamSlug(away.name) === teamId ? away.name : home.name;
-  })() : footballError ? "Football data unavailable" : "Football team";
-  const gameRows = matches.map((game) => {
-    const { away, home } = gameTeams(game);
-    const isAway = teamSlug(away.name) === teamId;
-    const opponent = isAway ? home : away;
-    const status = gameStatus(game);
-    const scoresPresent = away.score !== undefined && away.score !== null && away.score !== "" && home.score !== undefined && home.score !== null && home.score !== "";
-    const result = status === "Scheduled" ? gameTime(game) : status !== "Status unavailable" && scoresPresent ? `${isAway ? away.score : home.score} – ${isAway ? home.score : away.score}` : "Score unavailable";
-    return `<div class="schedule-row"><span class="schedule-date">${escapeHtml(gameTime(game))}</span><span class="schedule-opponent"><span><strong>${isAway ? "at" : "vs."} ${escapeHtml(opponent.name)}</strong><small>NCAA Division III</small></span></span><span class="schedule-result">${escapeHtml(result)}<small>${escapeHtml(status)}</small></span></div>`;
-  }).join("");
-  app.innerHTML = `<div class="page"><div class="container"><div class="breadcrumbs"><a href="#/">Home</a><span>/</span><a href="#/sport/football">Football</a><span>/</span><span>${escapeHtml(teamName)}</span></div><section class="team-hero"><div class="team-heading"><span class="team-crest">FB</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>NCAA Division III · Football</div><h1>${escapeHtml(teamName)}</h1><p>Team information provided by the current NCAA DIII football scoreboard.</p></div></div></section><div class="team-content"><section class="panel"><div class="panel-title-row"><h2>Schedule & results</h2><small>Current scoreboard window</small></div>${footballLoading && !footballData ? `<div class="empty-state">Loading verified game information…</div>` : footballError ? `<div class="empty-state">Football data is temporarily unavailable. Please refresh to try again.</div>` : matches.length ? gameRows : `<div class="empty-state">This team has no game listed in the current NCAA scoreboard response.</div>`}<div class="rank-preview-foot" data-football-attribution>${footballAttribution()}</div></section><aside class="ranking-side"><section class="panel side-card"><h3>Verified team information</h3><p>${matches.length ? "This team appeared in the current Division III scoreboard response." : "No roster, record, or season statistics are available from the current scoreboard response."}</p><div class="season-line"><span>Team</span><strong>${escapeHtml(teamName)}</strong></div><div class="season-line"><span>Division</span><strong>NCAA Division III</strong></div><div class="season-line"><span>Season record</span><strong>Unavailable</strong></div></section><a class="button button-secondary" href="#/sport/football">← Back to Football</a></aside></div></div></div>`;
-  if (!footballData) loadFootballData();
 }
 
 function renderDirectory(filter = "all", query = "") {
@@ -284,19 +172,13 @@ function handleSearch() {
   }
   const seen = new Set();
   const matches = [];
-  D3_SPORTS.filter((sport) => sport.id !== "football").forEach((sport) => sportData[sport.id].forEach((team) => {
+  D3_SPORTS.forEach((sport) => sportData[sport.id].forEach((team) => {
     const key = `${sport.id}:${team.id}`;
     if (!seen.has(key) && `${team.school} ${team.mascot} ${team.location}`.toLowerCase().includes(query)) {
       seen.add(key);
       matches.push({ team, sport });
     }
   }));
-  const footballTeams = new Map();
-  (footballData?.games || []).forEach((game) => {
-    const { away, home } = gameTeams(game);
-    [away, home].forEach((team) => { if (team.name.toLowerCase().includes(query)) footballTeams.set(teamSlug(team.name), team.name); });
-  });
-  [...footballTeams].slice(0, 5).forEach(([slug, name]) => matches.push({ team: { id: slug, school: name, abbreviation: "FB" }, sport: sportById("football") }));
   searchResults.innerHTML = `<div class="search-results-title">${matches.length ? "Teams" : "No matches"}</div>${matches.slice(0, 7).map(({ team, sport }) => `<a class="search-result" href="#/team/${sport.id}/${team.id}">${teamBadge(team)}<span><strong>${team.school}</strong><small>${sport.name} · ${team.mascot}</small></span></a>`).join("") || `<div class="search-results-title">Try a school name or mascot.</div>`}`;
   searchResults.hidden = false;
 }
