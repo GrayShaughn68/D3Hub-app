@@ -35,6 +35,15 @@ When a user wants to follow Division III sports, they can find scores, rankings,
 - A homepage or profile page for every Division III college sports team.
 - Team and sport information focused exclusively on the Division III level.
 
+### Verified softball feeds
+
+- The softball section uses NCAA DIII scoreboard data and the NCAA season date index; dated scoreboards provide the results for a selected game date.
+- Regional NPI rankings are labeled as regional rankings and are not presented as a national poll.
+- Conference standings that are not returned by the NCAA feed are labeled unavailable rather than replaced with demo values.
+- Historical NCAA championship results and NCAA tournament brackets are shown from their respective feeds. Tournament seeds are kept separate from rankings.
+- Feed responses show their source and retrieval time. Missing or temporarily unavailable data is labeled and is never filled with sample game results.
+- The selected scoreboard date refreshes approximately every 60 seconds while the Scores & Schedule section is visible. Polling stops on another softball section, another sport, or a hidden browser tab; refresh failures preserve the last successful scores and show a status notice.
+
 ### Nice to have
 
 - Player statistics.

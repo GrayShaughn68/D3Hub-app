@@ -38,7 +38,7 @@ const D3_SPORTS = [
   { id: "mens-soccer", name: "Men’s Soccer", shortName: "M. Soccer", season: "Fall", symbol: "MS", icon: "soccer", description: "Explore DIII men’s soccer teams and the sample Top 25." },
   { id: "womens-soccer", name: "Women’s Soccer", shortName: "W. Soccer", season: "Fall", symbol: "WS", icon: "soccer", description: "Track DIII women’s soccer teams, rankings, and sample results." },
   { id: "baseball", name: "Baseball", shortName: "Baseball", season: "Spring", symbol: "BB", icon: "baseball", description: "DIII baseball rankings and team profiles in one place." },
-  { id: "softball", name: "Softball", shortName: "Softball", season: "Spring", symbol: "SB", icon: "softball", description: "Browse DIII softball rankings and discover teams." },
+  { id: "softball", name: "Softball", shortName: "Softball", season: "Spring", symbol: "SB", icon: "softball", description: "Follow NCAA DIII softball scores, schedules, regional rankings, and tournament results." },
   { id: "womens-volleyball", name: "Women’s Volleyball", shortName: "Volleyball", season: "Fall", symbol: "VB", icon: "volleyball", description: "DIII volleyball rankings, teams, and season snapshots." }
 ];
 
