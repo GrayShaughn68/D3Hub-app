@@ -12,7 +12,7 @@ const D3_SCHOOLS = [
   ["amherst", "Amherst", "Mammoths", "Amherst, MA", "AMH", "#382d67"],
   ["williams", "Williams", "Ephs", "Williamstown, MA", "WIL", "#4f75b6"],
   ["middlebury", "Middlebury", "Panthers", "Middlebury, VT", "MID", "#287e54"],
-  ["ithaca", "Ithaca", "Bombers", "Ithaca, NY", "ITH", "#bd3039"],
+  ["ithaca", "Ithaca", "Bombers", "Ithaca, NY", "ITH", "#00539B"],
   ["denison", "Denison", "Big Red", "Granville, OH", "DEN", "#a92b35"],
   ["kenyon", "Kenyon", "Owls", "Gambier, OH", "KEN", "#467c5d"],
   ["calvin", "Calvin", "Knights", "Grand Rapids, MI", "CAL", "#293c75"],
