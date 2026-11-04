@@ -9,16 +9,16 @@ let footballError = false;
 let footballRequest = null;
 
 const iconPaths = {
-  football: '<path d="M4.5 7.2c3.8-3.8 11.2-4.2 15-1.7 2.4 3.8 2.1 11.2-1.7 15-3.8 2.4-11.2 2.1-15-1.7-2.4-3.8-2.1-11.2 1.7-15Z"/><path d="m8 16 8-8M9.4 10.7l3.9 3.9m-5.7-2.1 3.9 3.9m.6-9.3 3.9 3.9"/>',
-  basketball: '<circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3c2.5 2.4 3.8 5.4 3.8 9S14.5 18.6 12 21M12 3c-2.5 2.4-3.8 5.4-3.8 9s1.3 6.6 3.8 9"/>',
-  soccer: '<circle cx="12" cy="12" r="9"/><path d="m12 7 3 2.2-1.1 3.6h-3.8L9 9.2 12 7Zm-3 2.2-3.4-.8M9 12.8l-2.1 3.1m7-3.1 3.1 2.2m-2-5.8 2-3.1m-6 8.8-.2 3.7m5.1-3.6 3.2.5"/>',
-  baseball: '<path d="M5 5c3-2.8 11-2.8 14 0s3 11 0 14-11 3-14 0S2 8 5 5Z"/><path d="M5.1 5.1c2.4 1.9 3.9 4.3 4.6 6.9s.2 5.2-1.3 7.9m10.5-14.8c-2.4 1.9-3.9 4.3-4.6 6.9s-.2 5.2 1.3 7.9m-11.8-12 2.1-.2m-.5 2.8 2.2-.6m7.1-2 2.2.6m-1.7 2.2 2.1.2"/>',
-  softball: '<circle cx="12" cy="12" r="9"/><path d="M6.5 5c2.3 1.7 3.6 4.1 3.6 7s-1.3 5.3-3.6 7m11-14c-2.3 1.7-3.6 4.1-3.6 7s1.3 5.3 3.6 7m-11-11 2.2.4m-1.4 2.3 2.3.2m6.5-2.9 2.2-.4m-2.3 3.3 2.3-.2"/>',
-  volleyball: '<path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/><path d="M7.1 4.5c3.7 2.2 6.2 5.8 6.7 10.3m3-10.1c-2 3.6-5.4 6.4-10 7.4m10.8 5.4c-3.6-1.7-7.8-1.8-12-.1"/>'
+  football: '<path d="M4.1 8.1c3.5-3.2 11-4.1 15.7-1.4 1.9 4.7 1.2 11.3-2.7 14.8-4.7 1.9-11.3 1.2-14.8-2.7C.4 14.1 1.1 10.5 4.1 8.1Z" fill="#9b552c" stroke="#69351f"/><path d="m7.3 17.1 9.4-10m-8.2 5.3 3.9 3.9m-1.8-6 3.9 3.9m-7.7-1.6 3.9 3.9" fill="none" stroke="#fff0d6" stroke-width="1.4"/>',
+  basketball: '<circle cx="12" cy="12" r="9" fill="#e77b2b" stroke="#774019"/><path d="M3.4 9.2c5.2 1.8 12 1.8 17.2 0M3.4 14.8c5.2-1.8 12-1.8 17.2 0M9.1 3.8c2.4 4.8 2.4 11.6 0 16.4m5.8-16.4c-2.4 4.8-2.4 11.6 0 16.4" fill="none" stroke="#593216" stroke-width="1.2"/>',
+  soccer: '<circle cx="12" cy="12" r="9" fill="#f5f5ef" stroke="#293342"/><path d="m12 7 3.2 2.3-1.2 3.8h-4l-1.2-3.8L12 7Zm0 0V3m-3.2 2.9L5.2 7.1m3.6 6-2.5 4m7.7-4 2.5 4m.7-7.8 3.5-1.2m-6.5 9.8.6 3.8m-5.6-3.8-.6 3.8" fill="none" stroke="#293342" stroke-width="1.2"/><path d="m12 7 3.2 2.3-1.2 3.8h-4l-1.2-3.8L12 7Z" fill="#293342" stroke="#293342"/>',
+  baseball: '<circle cx="12" cy="12" r="9" fill="#f8f3e9" stroke="#c9c2b5"/><path d="M6.2 5.1c3.8 3.2 4.6 10.6 1.1 14m10.5-14.2c-3.8 3.2-4.6 10.6-1.1 14m-11-10.4 1.8.2m-.8 2.7 2 .3m-.6 2.5 1.9.4m9.7-6.1-1.8.2m.8 2.7-2 .3m.6 2.5-1.9.4" fill="none" stroke="#ba3744" stroke-width="1.15"/>',
+  softball: '<circle cx="12" cy="12" r="9" fill="#f5e84b" stroke="#b9a92b"/><path d="M6.3 5.1c3.5 3.4 3.5 10.4 0 13.8m11.4-13.8c-3.5 3.4-3.5 10.4 0 13.8m-12-10.7 1.9.5m-1.5 2.8 2 .3m-1.3 2.6 1.8-.1m9.8-6.1-1.9.5m1.5 2.8-2 .3m1.3 2.6-1.8-.1" fill="none" stroke="#bd3945" stroke-width="1.15"/>',
+  volleyball: '<circle cx="12" cy="12" r="9" fill="#f7f5ed" stroke="#52677b"/><path d="M5.2 6.1c4.1.1 8.1 2.7 10.1 6.6m3.5-5.1c-1.2 4.1-4.5 7.4-8.7 8.5M7.5 20c.2-4.1 2.5-8.1 6.2-10.4m4.8 9.1c-3.3-2.4-5.2-6.6-4.8-10.9M3 12.4c3.6-2 8.2-2.2 12-.4" fill="none" stroke="#3678a5" stroke-width="1.2"/>'
 };
 
 function icon(name) {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.football}</svg>`;
+  return `<svg class="sport-mark sport-mark-${name}" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.football}</svg>`;
 }
 
 function sportById(id) {
