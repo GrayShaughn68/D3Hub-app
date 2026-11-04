@@ -219,7 +219,7 @@ function renderHome() {
         <p>Your front row seat to Division III sports. Explore team rankings, find your school, and keep up with the stories across DIII.</p>
         <div class="hero-actions"><a class="button button-primary" href="#/sport/football">Explore football scores <span class="arrow">→</span></a><a class="button button-secondary" href="#/directory">Browse teams</a></div>
       </div>
-      <div class="hero-art" aria-hidden="true"><span class="hero-number">III</span><div class="hero-ball"><svg viewBox="0 0 100 100"><path d="M16 27c19-13 47-14 67-2 13 20 12 48-2 66-20 13-48 12-66-2C2 69 2 42 16 27Z"/><path d="m28 70 44-44M32 40l27 28M40 32l27 28"/></svg></div><span class="hero-art-caption">The DIII community</span></div>
+      <div class="hero-art" aria-hidden="true"><span class="hero-number">III</span><div class="hero-ball"><svg viewBox="0 0 100 100"><path d="M10 74C20 48 48 20 76 10c8-3 16 4 13 12-10 28-38 56-66 66-8 3-16-4-13-12Z"/><path d="m22 78 56-56M38 68l-6-6m15-1-6-6m15-1-6-6m15-1-6-6"/></svg></div><span class="hero-art-caption">The DIII community</span></div>
     </section>
 
     <div class="home-grid">
