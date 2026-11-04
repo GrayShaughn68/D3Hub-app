@@ -75,6 +75,7 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
 .section-heading p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
 .text-link { display: inline-flex; align-items: center; gap: 6px; color: #ff7a84; font-size: 10px; font-weight: 800; white-space: nowrap; }
 .text-link:hover { color: white; }
+.softball-home-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
 .arrow { font-size: 16px; line-height: 0; }
 .sport-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
 .sport-card { min-height: 124px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); transition: .17s ease; position: relative; overflow: hidden; }
@@ -111,6 +112,47 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
 .football-attribution a:hover { color: #fff; }
 .panel [data-football-games] .snapshot-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
 .panel [data-football-games] .snapshot-score { max-width: 170px; white-space: normal; }
+.softball-page-header { align-items: flex-start; flex-direction: column; }
+.softball-tabs { max-width: 100%; overflow-x: auto; }
+.softball-tabs .sport-tab { flex: none; white-space: nowrap; }
+.softball-schedule-controls { display: flex; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+.softball-date-control { display: flex; align-items: center; gap: 10px; padding: 13px 0; color: #9ba9bb; font-size: 10px; }
+.softball-date-control select { max-width: 100%; padding: 8px 10px; border: 1px solid #35445b; border-radius: 4px; background: #0e1928; color: #e4e9ef; font: inherit; }
+.softball-feed-note { padding: 12px 16px; color: #9ba9bb; font-size: 10px; line-height: 1.6; }
+.softball-data-gap { border-left: 2px solid #e3a44a; background: rgba(227,164,74,.08); color: #f0c27e; }
+.softball-refresh-meta { padding: 9px 16px; color: #8593a6; font-size: 9px; line-height: 1.5; }
+.softball-refresh-warning { margin: 8px 12px; padding: 8px 10px; border-left: 2px solid #e3a44a; background: rgba(227,164,74,.08); color: #f0c27e; font-size: 9px; line-height: 1.5; }
+.softball-game-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 100px; align-items: center; gap: 14px; min-height: 66px; padding: 10px 16px; border-top: 1px solid rgba(210,225,244,.07); }
+.softball-game-date { color: #9ba9bb; font-size: 10px; line-height: 1.5; }
+.softball-game-date small, .softball-game-score small { display: block; margin-top: 3px; color: #8391a5; font-size: 9px; }
+.softball-game-matchup { display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); align-items: center; gap: 8px; }
+.softball-game-matchup strong { overflow: hidden; color: #e4e9ef; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.softball-game-matchup span { color: #758399; text-align: center; font-size: 9px; }
+.softball-game-score { color: #e4e9ef; text-align: right; font: 700 16px "Barlow Condensed", sans-serif; }
+.softball-region-heading { padding: 10px 16px; border-top: 1px solid var(--line); background: #0e1928; color: #e4e9ef; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.softball-ranking-head, .softball-ranking-row { display: grid; grid-template-columns: 64px minmax(130px, 1fr) 120px 76px; align-items: center; gap: 8px; padding: 9px 16px; }
+.softball-ranking-head { background: #0e1928; color: #7f8ea2; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.softball-ranking-row { min-height: 43px; border-top: 1px solid rgba(210,225,244,.07); color: #bdc8d5; font-size: 10px; }
+.softball-ranking-row strong { color: #e4e9ef; }
+.softball-table-scroll { overflow-x: auto; }
+.softball-data-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.softball-data-table th, .softball-data-table td { padding: 10px 12px; border-top: 1px solid rgba(210,225,244,.07); text-align: left; white-space: nowrap; }
+.softball-data-table th { background: #0e1928; color: #8391a5; font-size: 8px; text-transform: uppercase; }
+.softball-data-table td { color: #d5dce6; }
+.softball-history-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 65px; align-items: center; gap: 13px; min-height: 59px; padding: 9px 16px; border-top: 1px solid rgba(210,225,244,.07); }
+.softball-history-year { color: #ff7580; font: 700 17px "Barlow Condensed", sans-serif; }
+.softball-history-row strong { display: block; color: #e4e9ef; font-size: 10px; }
+.softball-history-row small { display: block; margin-top: 3px; color: #8391a5; font-size: 9px; }
+.softball-history-score { text-align: right; }
+.softball-bracket-section { border-top: 1px solid rgba(210,225,244,.07); }
+.softball-bracket-section summary { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; background: #0e1928; color: #e4e9ef; cursor: pointer; font-size: 10px; font-weight: 800; list-style-position: inside; }
+.softball-bracket-section summary span { color: #8897aa; font-size: 9px; font-weight: 500; }
+.softball-bracket-game { padding: 9px 16px; border-top: 1px solid rgba(210,225,244,.06); }
+.softball-bracket-game-title { margin-bottom: 5px; color: #8391a5; font-size: 8px; text-transform: uppercase; }
+.softball-bracket-team { display: grid; grid-template-columns: 54px minmax(0, 1fr) 26px; align-items: center; gap: 8px; min-height: 27px; font-size: 10px; }
+.softball-bracket-team span { color: #8391a5; font-size: 8px; }
+.softball-bracket-team strong { color: #d5dce6; }
+.softball-bracket-team b { color: #fff; text-align: right; }
 .snapshot-foot { padding: 10px 15px; border-top: 1px solid var(--line); color: #718096; font-size: 9px; }
 .rank-section { margin-top: 30px; }
 .rank-preview { overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
@@ -252,6 +294,7 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
   .sports-strip.collapsed { display: none; }
   .container { width: calc(100% - 32px); }
   .page { padding: 22px 0 48px; }
+  .softball-home-links { align-items: flex-start; flex-direction: column; gap: 6px; }
   .hero { display: block; min-height: 335px; }
   .hero-copy { padding: 30px 24px 27px; }
   .hero h1 { max-width: 360px; font-size: 48px; }
@@ -288,6 +331,23 @@ kbd { padding: 1px 5px; border: 1px solid #304056; border-radius: 3px; font: 11p
   .sport-large-icon { width: 45px; height: 45px; }
   .sport-tabs { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0,1fr)); }
   .sport-tab { min-width: 0; padding: 8px 5px; font-size: 9px; }
+  .softball-tabs { display: flex; flex: none; overflow-x: auto; }
+  .softball-tabs .sport-tab { flex: none; white-space: nowrap; }
+  .softball-schedule-controls { flex-direction: column; gap: 0; padding: 0 9px; }
+  .softball-date-control { align-items: flex-start; flex-direction: column; gap: 6px; padding: 9px 0; }
+  .softball-date-control select { width: 100%; }
+  .softball-game-row { grid-template-columns: 74px minmax(0, 1fr) 61px; gap: 7px; padding: 9px; }
+  .softball-refresh-meta { padding: 8px 9px; }
+  .softball-refresh-warning { margin: 7px 9px; }
+  .softball-game-date, .softball-game-matchup strong { font-size: 9px; }
+  .softball-game-matchup { grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); gap: 4px; }
+  .softball-game-score { font-size: 14px; }
+  .softball-ranking-head, .softball-ranking-row { grid-template-columns: 42px minmax(90px, 1fr) 78px 52px; gap: 5px; padding-left: 9px; padding-right: 9px; font-size: 8px; }
+  .softball-ranking-head { font-size: 7px; }
+  .softball-history-row { grid-template-columns: 42px minmax(0, 1fr) 46px; gap: 8px; padding-left: 9px; padding-right: 9px; }
+  .softball-history-row strong { font-size: 9px; }
+  .softball-history-row small { font-size: 8px; }
+  .softball-bracket-game { padding-left: 9px; padding-right: 9px; }
   .content-layout { grid-template-columns: 1fr; }
   .ranking-side { grid-template-columns: repeat(2,1fr); }
   .ranking-table-head, .ranking-entry { grid-template-columns: 33px minmax(120px,1fr) 45px 45px 48px; gap: 4px; padding-left: 9px; padding-right: 9px; }

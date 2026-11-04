@@ -14,6 +14,14 @@ The scoreboard supplies the current DIII football games, including upcoming sche
 
 The upstream service is community maintained, subject to its availability and request limits. The website shows the source and the upstream update time when supplied (otherwise the proxy retrieval time).
 
+## Softball data
+
+The DIII softball page uses NCAA.com feeds through `api/softball.js`. Its `scoreboard` feed returns games for a selected date; `schedule` lists season dates and daily game counts for the verified 2024–2026 seasons; `rankings` currently returns regional NPI rankings, not a national poll; `history` returns championship results; and `bracket` returns the 2026 NCAA tournament bracket with committee seeds. The UI calendar year is mapped to the NCAA schedule endpoint's season-year value. Tournament seeds are kept separate from regional rankings. The community API's softball `standings` route returned an upstream error during verification, so D3Hub labels standings unavailable instead of showing demo values.
+
+The softball proxy validates each feed response, adds a `source` and `retrievedAt` timestamp, and caches successful responses at the hosting edge for 45 seconds. The local `server.js` proxy uses an equivalent in-memory cache. The API is community maintained and can be unavailable; the softball page shows a temporary unavailable state rather than substituting demo games.
+
+While **Scores & schedule** is open and the browser tab is visible, the selected date's scoreboard refreshes approximately every 60 seconds through that same proxy. Polling pauses when another softball section or sport is open, or when the browser tab is hidden. Refreshes update only the score results, preserving the selected season/date and page scroll; a failed refresh leaves the last successful scores visible with a status notice.
+
 ## Run locally
 
 The local runner uses only Node.js built-in modules; no package installation is needed.

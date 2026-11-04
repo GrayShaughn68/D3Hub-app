@@ -2,11 +2,22 @@ const app = document.getElementById("app");
 const sportsStrip = document.getElementById("sports-strip");
 const searchInput = document.getElementById("global-search");
 const searchResults = document.getElementById("search-results");
-const sportData = Object.fromEntries(D3_SPORTS.filter((sport) => sport.id !== "football").map((sport) => [sport.id, demoTeamsForSport(sport.id)]));
+const sportData = Object.fromEntries(D3_SPORTS.filter((sport) => !["football", "softball"].includes(sport.id)).map((sport) => [sport.id, demoTeamsForSport(sport.id)]));
 let footballData = null;
 let footballLoading = false;
 let footballError = false;
 let footballRequest = null;
+const softballFeeds = new Map();
+const softballErrors = new Map();
+const softballRefreshErrors = new Map();
+const softballRequests = new Map();
+const softballSeason = "2026";
+const softballSeasons = ["2026", "2025", "2024"];
+let softballSelectedSeason = softballSeason;
+let softballView = "scores";
+let softballSelectedDate = "";
+let softballRefreshInterval = null;
+const softballRefreshMs = 60_000;
 
 const iconPaths = {
   football: '<path d="M2.5 17.8C4 13 9 7 15.7 3.2c2.1-1.2 5.3 0 4.5 2.5-1.7 5.1-7 10.5-12.7 14.1-2.3 1.5-5.4.9-5-2Z" fill="#9b552c" stroke="#69351f"/><path d="m4.8 16.7 2.3 2.4m9-13.1 2.4 2.3" fill="none" stroke="#fff0d6" stroke-width="2.2"/><path d="m6.4 17.6 9.8-10m-6.6 6.7-2.2-2.1m5.2-1-2.2-2.1m5.2-1-2.2-2.1" fill="none" stroke="#fff0d6" stroke-width="1.2"/>',
@@ -49,6 +60,104 @@ function footballRetrievedAt() {
   if (!value) return "Retrieval time unavailable";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? escapeHtml(value) : `Retrieved ${date.toLocaleString()}`;
+}
+
+function softballFeedKey(view, query = {}) {
+  if (view === "scoreboard") return `scoreboard:${query.date || "latest"}`;
+  if (view === "schedule" || view === "bracket") return `${view}:${query.year || softballSeason}`;
+  return view;
+}
+
+function softballScheduleQuery(year) {
+  return { year: String(Number(year) - 1) };
+}
+
+function softballViewUsesFeed(view) {
+  return softballView === view || (softballView === "scores" && ["schedule", "scoreboard"].includes(view));
+}
+
+function softballRouteIsOpen() {
+  return location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).slice(0, 2).join("/") === "sport/softball";
+}
+
+function softballFeedIsVisible(view, query = {}) {
+  if (!softballRouteIsOpen()) return false;
+  if (view === "scoreboard") return softballView === "scores" && query.date === softballSelectedDate;
+  if (view === "schedule") return softballView === "scores" && String(query.year) === softballScheduleQuery(softballSelectedSeason).year;
+  return softballView === view;
+}
+
+function stopSoftballPolling() {
+  if (softballRefreshInterval !== null) {
+    window.clearInterval(softballRefreshInterval);
+    softballRefreshInterval = null;
+  }
+}
+
+function syncSoftballPolling() {
+  const shouldPoll = document.visibilityState === "visible" && softballRouteIsOpen() && softballView === "scores" && Boolean(softballSelectedDate)
+    && Boolean(document.getElementById("softball-score-results"));
+  if (!shouldPoll) {
+    stopSoftballPolling();
+    return;
+  }
+  if (softballRefreshInterval === null) {
+    softballRefreshInterval = window.setInterval(refreshSoftballScoreboard, softballRefreshMs);
+  }
+}
+
+function refreshSoftballScoreboard() {
+  if (!softballRouteIsOpen() || softballView !== "scores" || !softballSelectedDate) {
+    stopSoftballPolling();
+    return Promise.resolve(null);
+  }
+  return loadSoftballFeed("scoreboard", { date: softballSelectedDate }, { refresh: true });
+}
+
+function loadSoftballFeed(view, query = {}, options = {}) {
+  const key = softballFeedKey(view, query);
+  if (softballFeeds.has(key) && !options.refresh) return Promise.resolve(softballFeeds.get(key));
+  if (softballRequests.has(key)) return softballRequests.get(key);
+  const params = new URLSearchParams({ view, ...query });
+  let request;
+  request = fetch(`/api/softball?${params}`, { headers: { Accept: "application/json" } })
+    .then((response) => {
+      if (!response.ok) throw new Error("Softball data unavailable");
+      return response.json();
+    })
+    .then((payload) => {
+      if (payload.available === false) throw new Error(payload.error || "Softball data unavailable");
+      softballFeeds.set(key, payload);
+      softballErrors.delete(key);
+      softballRefreshErrors.delete(key);
+      return payload;
+    })
+    .catch((error) => {
+      if (softballFeeds.has(key)) softballRefreshErrors.set(key, error.message);
+      else softballErrors.set(key, error.message);
+      return null;
+    })
+    .finally(() => {
+      if (softballRequests.get(key) === request) softballRequests.delete(key);
+      if (!softballFeedIsVisible(view, query)) return;
+      if (view === "scoreboard" && options.refresh) renderSoftballScoreResults();
+      else if (softballViewUsesFeed(view)) refreshSoftballContent();
+    });
+  softballRequests.set(key, request);
+  if (softballFeedIsVisible(view, query)) refreshSoftballContent();
+  return request;
+}
+
+function softballTimestamp(feed) {
+  if (!feed) return "Update time unavailable";
+  const sourceTime = feed.updated_at || feed.updated;
+  const retrieved = feed.retrievedAt ? new Date(feed.retrievedAt) : null;
+  const retrievedText = retrieved && !Number.isNaN(retrieved.getTime()) ? retrieved.toLocaleString() : "time unavailable";
+  return `${sourceTime ? `Source update: ${sourceTime} · ` : ""}Retrieved: ${retrievedText}`;
+}
+
+function softballSource(feed) {
+  return `<div class="football-attribution">Source: <a href="https://www.ncaa.com/sports/softball/d3" target="_blank" rel="noreferrer">NCAA.com DIII Softball</a> via <a href="https://github.com/henrygd/ncaa-api" target="_blank" rel="noreferrer">ncaa-api</a> · ${escapeHtml(softballTimestamp(feed))}</div>`;
 }
 
 function unwrapGame(record) {
@@ -199,6 +308,197 @@ function loadFootballData() {
   return footballRequest;
 }
 
+function softballDates(schedule) {
+  return (schedule?.data?.schedules?.games || []).map((entry) => {
+    const match = String(entry.contestDate || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return match ? { date: `${match[3]}-${match[1]}-${match[2]}`, count: Number(entry.count) || 0 } : null;
+  }).filter(Boolean).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function softballDefaultDate(dates) {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  return dates.find((entry) => entry.date === today)?.date
+    || dates.find((entry) => entry.date >= today)?.date
+    || dates.at(-1)?.date
+    || "";
+}
+
+function softballDateLabel(value, options = {}) {
+  const date = new Date(`${value}T12:00:00Z`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { ...options, weekday: options.weekday || undefined, month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+function softballScoreMarkup(record) {
+  const game = unwrapGame(record);
+  const { away, home } = gameTeams(game);
+  const status = gameStatus(game);
+  const hasBothScores = away.score !== undefined && away.score !== null && away.score !== "" && home.score !== undefined && home.score !== null && home.score !== "";
+  const result = status === "Scheduled" ? "Upcoming" : status !== "Status unavailable" && hasBothScores ? `${away.score} – ${home.score}` : "Score unavailable";
+  const dateValue = game.startDate || game.date || "Date unavailable";
+  const timeValue = game.startTime || "Time unavailable";
+  const stateClass = status === "Live" ? "status-live" : status === "Final" ? "status-final" : status === "Scheduled" ? "status-scheduled" : "";
+  return `<div class="softball-game-row"><div class="softball-game-date">${escapeHtml(dateValue)}<small>${escapeHtml(timeValue)}</small></div><div class="softball-game-matchup"><strong>${escapeHtml(away.name)}</strong><span>at</span><strong>${escapeHtml(home.name)}</strong></div><div class="softball-game-score">${escapeHtml(result)}<small class="${stateClass}">${escapeHtml(status)}</small></div></div>`;
+}
+
+function softballScoreResultsMarkup(scoreboard, date, scheduledCount) {
+  const key = softballFeedKey("scoreboard", { date });
+  const refreshError = scoreboard ? softballRefreshErrors.get(key) : "";
+  const refreshWarning = refreshError
+    ? `<div class="softball-refresh-warning" role="status">Score refresh failed. Showing the last successful data; another attempt will happen in about 60 seconds.</div>`
+    : "";
+  const completenessNote = scoreboard && Number.isFinite(scheduledCount) && scoreboard.games.length < scheduledCount
+    ? `<div class="softball-feed-note softball-data-gap">The NCAA schedule lists ${scheduledCount} games for this date, but its scoreboard currently returns ${scoreboard.games.length}. Some results may be missing from the scoreboard feed.</div>`
+    : "";
+  let gamesMarkup;
+  if (!scoreboard && softballErrors.has(key)) gamesMarkup = `<div class="empty-state">Scores for this date are temporarily unavailable from the NCAA feed.</div>`;
+  else if (!scoreboard) gamesMarkup = `<div class="empty-state">Loading verified DIII softball scores…</div>`;
+  else if (!scoreboard.games.length) gamesMarkup = `<div class="empty-state">No DIII softball games are listed for ${escapeHtml(softballDateLabel(date))}. Choose another date in the season schedule.</div>`;
+  else gamesMarkup = scoreboard.games.map(softballScoreMarkup).join("");
+  const retrieved = scoreboard?.retrievedAt ? new Date(scoreboard.retrievedAt) : null;
+  const retrievedLabel = retrieved && !Number.isNaN(retrieved.getTime()) ? retrieved.toLocaleString() : "not available yet";
+  return `${refreshWarning}${completenessNote}${gamesMarkup}<div class="softball-refresh-meta" role="status">Updates approximately every 60 seconds while Scores &amp; Schedule is open. Latest successful retrieval: ${escapeHtml(retrievedLabel)}.</div><div class="rank-preview-foot">${softballSource(scoreboard)}</div>`;
+}
+
+function renderSoftballScoreResults() {
+  const results = document.getElementById("softball-score-results");
+  if (!results || softballView !== "scores" || !softballRouteIsOpen()) return;
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  const schedule = softballFeeds.get(softballFeedKey("schedule", softballScheduleQuery(softballSelectedSeason)));
+  const date = softballSelectedDate;
+  const scoreboard = softballFeeds.get(softballFeedKey("scoreboard", { date }));
+  const scheduledCount = softballDates(schedule).find((entry) => entry.date === date)?.count;
+  results.innerHTML = softballScoreResultsMarkup(scoreboard, date, scheduledCount);
+  window.scrollTo(scrollX, scrollY);
+}
+
+function softballScoresPanel() {
+  const scheduleQuery = softballScheduleQuery(softballSelectedSeason);
+  const scheduleKey = softballFeedKey("schedule", scheduleQuery);
+  const schedule = softballFeeds.get(scheduleKey);
+  if (!schedule && !softballErrors.has(scheduleKey)) {
+    loadSoftballFeed("schedule", scheduleQuery);
+    return `<div class="empty-state">Loading the verified ${softballSelectedSeason} softball schedule…</div>`;
+  }
+  if (!schedule) return `<div class="empty-state">The NCAA softball schedule feed for ${escapeHtml(softballSelectedSeason)} is temporarily unavailable. No demo schedule is shown.</div>`;
+
+  const dates = softballDates(schedule);
+  if (!softballSelectedDate || !dates.some((entry) => entry.date === softballSelectedDate)) softballSelectedDate = softballDefaultDate(dates);
+  const query = { date: softballSelectedDate };
+  const scoreKey = softballFeedKey("scoreboard", query);
+  const scoreboard = softballFeeds.get(scoreKey);
+  if (!scoreboard && !softballErrors.has(scoreKey)) loadSoftballFeed("scoreboard", query);
+  const scheduledCount = dates.find((entry) => entry.date === softballSelectedDate)?.count;
+  const options = dates.slice().reverse().map((entry) => `<option value="${entry.date}" ${entry.date === softballSelectedDate ? "selected" : ""}>${escapeHtml(softballDateLabel(entry.date))} · ${entry.count} game${entry.count === 1 ? "" : "s"}</option>`).join("");
+  const seasons = softballSeasons.map((year) => `<option value="${year}" ${year === softballSelectedSeason ? "selected" : ""}>${year}</option>`).join("");
+  const control = `<div class="softball-schedule-controls"><label class="softball-date-control" for="softball-season-select"><span>Season</span><select id="softball-season-select">${seasons}</select></label><label class="softball-date-control" for="softball-date-select"><span>Game date · ${escapeHtml(softballSelectedSeason)}</span><select id="softball-date-select" ${dates.length ? "" : "disabled"}>${options || `<option>No scheduled dates listed</option>`}</select></label></div>`;
+  return `${control}<div class="softball-feed-note">Dates and daily game counts come from the NCAA season schedule. Select a date to load its official scoreboard.</div><div id="softball-score-results">${softballScoreResultsMarkup(scoreboard, softballSelectedDate, scheduledCount)}</div>`;
+}
+
+function softballRankingsPanel(feed) {
+  if (!feed) return `<div class="empty-state">${softballErrors.has("rankings") ? "Regional rankings are temporarily unavailable from the NCAA feed." : "Loading NCAA regional rankings…"}</div>`;
+  let region = "";
+  const rows = [];
+  for (const row of feed.data || []) {
+    const fields = Object.fromEntries(Object.entries(row).map(([key, value]) => [key.replace(/^\uFEFF/, "").trim(), value]));
+    const rankText = String(fields["REGION/RANK"] || "").trim();
+    if (/^REGION\s+/i.test(rankText)) { region = rankText; continue; }
+    if (!/^\d+$/.test(rankText) || !fields.SCHOOL || fields.SCHOOL === "School") continue;
+    rows.push({ region, rank: rankText, school: fields.SCHOOL, record: fields["IN-DIVISION RECORD"] || "Unavailable", npi: fields.NPI || "Unavailable" });
+  }
+  if (!rows.length) return `<div class="empty-state">The NCAA feed returned no regional ranking rows.</div>`;
+  let lastRegion = "";
+  const content = rows.map((row) => {
+    const header = row.region !== lastRegion ? `<div class="softball-region-heading">${escapeHtml(row.region)}</div>` : "";
+    lastRegion = row.region;
+    return `${header}<div class="softball-ranking-row"><span>${row.rank}</span><strong>${escapeHtml(row.school)}</strong><span>${escapeHtml(row.record)}</span><span>${escapeHtml(row.npi)}</span></div>`;
+  }).join("");
+  return `<div class="softball-feed-note"><strong>${escapeHtml(feed.title || "Regional Rankings")}</strong> · Regional NPI rankings, not a national poll. Tournament seeds are shown only in the bracket.</div><div class="softball-ranking-head"><span>Rank</span><span>School</span><span>DIII record</span><span>NPI</span></div>${content}<div class="rank-preview-foot">${softballSource(feed)}</div>`;
+}
+
+function softballHistoryPanel(feed) {
+  if (!feed) return `<div class="empty-state">${softballErrors.has("history") ? "Championship history is temporarily unavailable from the NCAA feed." : "Loading NCAA championship history…"}</div>`;
+  const entries = (feed.data || []).filter((item) => item.Year && item["Champion (Record)"]);
+  if (!entries.length) return `<div class="empty-state">The NCAA feed returned no championship history.</div>`;
+  return `<div class="softball-feed-note">Historical NCAA Division III championship results. Final scores are shown as reported by NCAA.com.</div>${entries.map((item) => `<div class="softball-history-row"><span class="softball-history-year">${escapeHtml(item.Year)}</span><div><strong>${escapeHtml(item["Champion (Record)"])}</strong><small>Runner-up: ${escapeHtml(item["Runner-Up"] || "Unavailable")} · ${escapeHtml(item.Site || "")}</small></div><strong class="softball-history-score">${escapeHtml(item.Score || "Score unavailable")}</strong></div>`).join("")}<div class="rank-preview-foot">${softballSource(feed)}</div>`;
+}
+
+function softballStandingsPanel(feed) {
+  if (!feed) return `<div class="empty-state">${softballErrors.has("standings") ? "NCAA DIII softball standings are unavailable from the current feed. No demo standings are shown." : "Checking the NCAA DIII softball standings feed…"}</div>`;
+  const rows = (feed.data || []).filter((row) => row && typeof row === "object");
+  if (!rows.length) return `<div class="empty-state">No NCAA DIII softball standings were returned.</div><div class="rank-preview-foot">${softballSource(feed)}</div>`;
+  const columns = Object.keys(rows[0]);
+  return `<div class="softball-feed-note">Conference standings returned by the NCAA feed.</div><div class="softball-table-scroll"><table class="softball-data-table"><thead><tr>${columns.map((column) => `<th>${escapeHtml(column.replace(/^\uFEFF/, ""))}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column] ?? "Unavailable")}</td>`).join("")}</tr>`).join("")}</tbody></table></div><div class="rank-preview-foot">${softballSource(feed)}</div>`;
+}
+
+function softballBracketPanel(feed) {
+  if (!feed) return `<div class="empty-state">${softballErrors.has("bracket:2026") ? "The 2026 NCAA tournament bracket is temporarily unavailable." : "Loading the verified 2026 NCAA tournament bracket…"}</div>`;
+  const championship = feed.championships?.find((item) => item.year === 2026);
+  if (!championship) return `<div class="empty-state">The NCAA feed does not currently list the 2026 DIII softball bracket.</div>`;
+  const sections = championship.sections || [];
+  const groups = new Map();
+  for (const game of championship.games || []) {
+    if (game.visible === false) continue;
+    const section = sections.find((entry) => Number(entry.sectionId) === Number(game.sectionId));
+    const sectionName = section?.title || "Tournament games";
+    const key = `${sectionName} · section ${game.sectionId}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(game);
+  }
+  const bracketGroups = [...groups].map(([title, games]) => `<details class="softball-bracket-section"><summary>${escapeHtml(title)} <span>${games.length} games</span></summary>${games.map((game) => {
+    const teams = [...(game.teams || [])].sort((a, b) => Number(b.isTop) - Number(a.isTop));
+    const teamRows = teams.map((team) => `<div class="softball-bracket-team"><span>${team.seed ? `Seed ${escapeHtml(team.seed)}` : ""}</span><strong>${escapeHtml(team.nameShort || team.nameFull || "Team unavailable")}</strong><b>${team.score ?? "—"}</b></div>`).join("");
+    return `<div class="softball-bracket-game"><div class="softball-bracket-game-title">${escapeHtml(game.startDate || "Date unavailable")} · ${escapeHtml(game.statusCodeDisplay || game.finalMessage || "Status unavailable")}</div>${teamRows || `<div class="softball-feed-note">Team details unavailable.</div>`}</div>`;
+  }).join("")}</details>`).join("");
+  return `<div class="softball-feed-note"><strong>${escapeHtml(championship.title)}</strong><br>Tournament seeds are selection committee placements, not national rankings.</div>${bracketGroups || `<div class="empty-state">Bracket games are not available.</div>`}<div class="rank-preview-foot">${softballSource(feed)}</div>`;
+}
+
+function softballPanelMarkup(view) {
+  if (view === "scores") return softballScoresPanel();
+  const query = view === "bracket" ? { year: softballSeason } : {};
+  const key = softballFeedKey(view, query);
+  const feed = softballFeeds.get(key);
+  if (!feed && !softballErrors.has(key)) loadSoftballFeed(view, query);
+  if (view === "rankings") return softballRankingsPanel(feed);
+  if (view === "standings") return softballStandingsPanel(feed);
+  if (view === "history") return softballHistoryPanel(feed);
+  if (view === "bracket") return softballBracketPanel(feed);
+  return `<div class="empty-state">Choose a softball section.</div>`;
+}
+
+function refreshSoftballContent() {
+  const panel = document.getElementById("softball-panel-content");
+  if (!panel || !softballView) return;
+  panel.innerHTML = softballPanelMarkup(softballView);
+  const dateSelect = document.getElementById("softball-date-select");
+  if (dateSelect) dateSelect.addEventListener("change", () => {
+    softballSelectedDate = dateSelect.value;
+    refreshSoftballContent();
+  });
+  const seasonSelect = document.getElementById("softball-season-select");
+  if (seasonSelect) seasonSelect.addEventListener("change", () => {
+    softballSelectedSeason = seasonSelect.value;
+    softballSelectedDate = "";
+    refreshSoftballContent();
+  });
+  syncSoftballPolling();
+}
+
+function renderSoftball(view = "scores") {
+  if (view !== "scores") stopSoftballPolling();
+  softballView = view;
+  setPrimaryNav("rankings");
+  document.querySelectorAll(".sport-pill").forEach((pill) => pill.classList.toggle("active", pill.getAttribute("href") === "#/sport/softball"));
+  const tabSpecs = [["scores", "Scores & schedule"], ["rankings", "Regional rankings"], ["standings", "Standings"], ["bracket", "2026 bracket"], ["history", "Championship history"]];
+  app.innerHTML = `<div class="page"><div class="container">
+    <div class="breadcrumbs"><a href="#/">Home</a><span>/</span><span>Softball</span></div>
+    <header class="sport-page-header softball-page-header"><div class="sport-page-title-wrap"><span class="sport-large-icon">${icon("softball")}</span><div><div class="eyebrow"><span class="eyebrow-dot"></span>Division III · Spring season</div><h1>Softball</h1><p>NCAA DIII scores, season schedule, regional NPI rankings, and tournament results. No demo games or rankings are shown.</p></div></div><div class="sport-tabs softball-tabs" role="tablist" aria-label="Softball sections">${tabSpecs.map(([id, label]) => `<button class="sport-tab ${view === id ? "active" : ""}" data-softball-view="${id}" role="tab" aria-selected="${view === id}">${label}</button>`).join("")}</div></header>
+    <div class="content-layout"><section class="panel ranking-panel"><div class="panel-title-row"><h2>${tabSpecs.find(([id]) => id === view)?.[1] || "Softball"}</h2><small>NCAA Division III · verified feeds</small></div><div id="softball-panel-content"></div></section><aside class="ranking-side"><section class="panel side-card"><h3>Data notes</h3><p>NCAA endpoints provide game scores, season dates, regional NPI rankings, championship history, and tournament brackets. Standings may be unavailable from the current NCAA feed.</p><div class="season-line"><span>Ranking feed</span><strong>Regional NPI</strong></div><div class="season-line"><span>Tournament seeds</span><strong>Bracket only</strong></div><div class="season-line"><span>Division</span><strong>NCAA DIII</strong></div></section><a class="button button-secondary" href="#/directory">Browse teams</a></aside></div>
+  </div></div>`;
+  document.querySelectorAll("[data-softball-view]").forEach((button) => button.addEventListener("click", () => renderSoftball(button.dataset.softballView)));
+  refreshSoftballContent();
+}
+
 function navMarkup() {
   sportsStrip.innerHTML = `<span class="sports-strip-label">Sports</span>${D3_SPORTS.map((sport) => `<a class="sport-pill" href="#/sport/${sport.id}">${sport.shortName}</a>`).join("")}`;
 }
@@ -224,8 +524,8 @@ function renderHome() {
 
     <div class="home-grid">
       <section>
-        <div class="section-heading"><div><h2>Choose your sport</h2><p>Football scores and NCAA regional rankings are sourced live; other sport sections are labeled demo.</p></div><a class="text-link" href="#/sport/football">Football scoreboard <span class="arrow">→</span></a></div>
-        <div class="sport-grid">${D3_SPORTS.map((sport) => `<a class="sport-card" href="#/sport/${sport.id}" data-symbol="${sport.symbol}"><div class="sport-card-top"><span class="sport-icon">${icon(sport.icon)}</span><span class="sport-card-meta">${sport.season} · DIII</span></div><span class="sport-card-title">${sport.name}</span><span class="sport-card-bottom"><span>${sport.id === "football" ? "Scores & schedule" : "Demo section"}</span><span>↗</span></span></a>`).join("")}</div>
+        <div class="section-heading"><div><h2>Choose your sport</h2><p>Football scores and regional rankings, plus softball scores, use NCAA feeds; other sport sections are labeled demo.</p></div><div class="softball-home-links"><a class="text-link" href="#/sport/football">Football scoreboard <span class="arrow">→</span></a><a class="text-link" href="#/sport/softball">Softball scoreboard <span class="arrow">→</span></a></div></div>
+        <div class="sport-grid">${D3_SPORTS.map((sport) => `<a class="sport-card" href="#/sport/${sport.id}" data-symbol="${sport.symbol}"><div class="sport-card-top"><span class="sport-icon">${icon(sport.icon)}</span><span class="sport-card-meta">${sport.season} · DIII</span></div><span class="sport-card-title">${sport.name}</span><span class="sport-card-bottom"><span>${["football", "softball"].includes(sport.id) ? "Scores & schedule" : "Demo section"}</span><span>↗</span></span></a>`).join("")}</div>
       </section>
       <section>
         <div class="section-heading"><div><h2>DIII Football</h2><p>Scores and upcoming games from NCAA.com.</p></div><span class="live-label">Scoreboard</span></div>
@@ -240,6 +540,7 @@ function renderHome() {
 
 function renderSport(sportId, view) {
   const sport = sportById(sportId);
+  if (sport.id === "softball") return renderSoftball(view || "scores");
   const teams = sportData[sport.id];
   if (!view) view = sport.id === "football" ? "scores" : "rankings";
   setPrimaryNav("rankings");
@@ -276,6 +577,7 @@ function renderSportTeams(sport, teams) {
 function renderTeam(sportId, teamId) {
   const sport = sportById(sportId);
   if (sport.id === "football") return renderFootballTeam(teamId);
+  if (sport.id === "softball") return renderNotFound();
   const team = teamById(sport.id, teamId);
   if (!team) return renderNotFound();
   setPrimaryNav("teams");
@@ -329,6 +631,7 @@ function escapeHtml(value) {
 }
 
 function route() {
+  stopSoftballPolling();
   searchResults.hidden = true;
   searchInput.value = "";
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
@@ -350,7 +653,7 @@ function handleSearch() {
   }
   const seen = new Set();
   const matches = [];
-  D3_SPORTS.filter((sport) => sport.id !== "football").forEach((sport) => sportData[sport.id].forEach((team) => {
+  D3_SPORTS.filter((sport) => !["football", "softball"].includes(sport.id)).forEach((sport) => sportData[sport.id].forEach((team) => {
     const key = `${sport.id}:${team.id}`;
     if (!seen.has(key) && `${team.school} ${team.mascot} ${team.location}`.toLowerCase().includes(query)) {
       seen.add(key);
@@ -381,6 +684,7 @@ window.addEventListener("keydown", (event) => {
   }
 });
 searchInput.addEventListener("input", handleSearch);
+document.addEventListener("visibilitychange", syncSoftballPolling);
 searchInput.addEventListener("focus", handleSearch);
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".search-box") && !event.target.closest(".search-results")) searchResults.hidden = true;
