@@ -9,7 +9,7 @@ let footballError = false;
 let footballRequest = null;
 
 const iconPaths = {
-  football: '<path d="M4.1 8.1c3.5-3.2 11-4.1 15.7-1.4 1.9 4.7 1.2 11.3-2.7 14.8-4.7 1.9-11.3 1.2-14.8-2.7C.4 14.1 1.1 10.5 4.1 8.1Z" fill="#9b552c" stroke="#69351f"/><path d="m7.3 17.1 9.4-10m-8.2 5.3 3.9 3.9m-1.8-6 3.9 3.9m-7.7-1.6 3.9 3.9" fill="none" stroke="#fff0d6" stroke-width="1.4"/>',
+  football: '<path d="M2.5 17.8C4 13 9 7 15.7 3.2c2.1-1.2 5.3 0 4.5 2.5-1.7 5.1-7 10.5-12.7 14.1-2.3 1.5-5.4.9-5-2Z" fill="#9b552c" stroke="#69351f"/><path d="m4.8 16.7 2.3 2.4m9-13.1 2.4 2.3" fill="none" stroke="#fff0d6" stroke-width="2.2"/><path d="m6.4 17.6 9.8-10m-6.6 6.7-2.2-2.1m5.2-1-2.2-2.1m5.2-1-2.2-2.1" fill="none" stroke="#fff0d6" stroke-width="1.2"/>',
   basketball: '<circle cx="12" cy="12" r="9" fill="#e77b2b" stroke="#774019"/><path d="M3.4 9.2c5.2 1.8 12 1.8 17.2 0M3.4 14.8c5.2-1.8 12-1.8 17.2 0M9.1 3.8c2.4 4.8 2.4 11.6 0 16.4m5.8-16.4c-2.4 4.8-2.4 11.6 0 16.4" fill="none" stroke="#593216" stroke-width="1.2"/>',
   soccer: '<circle cx="12" cy="12" r="9" fill="#f5f5ef" stroke="#293342"/><path d="m12 7 3.2 2.3-1.2 3.8h-4l-1.2-3.8L12 7Zm0 0V3m-3.2 2.9L5.2 7.1m3.6 6-2.5 4m7.7-4 2.5 4m.7-7.8 3.5-1.2m-6.5 9.8.6 3.8m-5.6-3.8-.6 3.8" fill="none" stroke="#293342" stroke-width="1.2"/><path d="m12 7 3.2 2.3-1.2 3.8h-4l-1.2-3.8L12 7Z" fill="#293342" stroke="#293342"/>',
   baseball: '<circle cx="12" cy="12" r="9" fill="#f8f3e9" stroke="#c9c2b5"/><path d="M6.2 5.1c3.8 3.2 4.6 10.6 1.1 14m10.5-14.2c-3.8 3.2-4.6 10.6-1.1 14m-11-10.4 1.8.2m-.8 2.7 2 .3m-.6 2.5 1.9.4m9.7-6.1-1.8.2m.8 2.7-2 .3m.6 2.5-1.9.4" fill="none" stroke="#ba3744" stroke-width="1.15"/>',
@@ -219,7 +219,7 @@ function renderHome() {
         <p>Your front row seat to Division III sports. Explore team rankings, find your school, and keep up with the stories across DIII.</p>
         <div class="hero-actions"><a class="button button-primary" href="#/sport/football">Explore football scores <span class="arrow">→</span></a><a class="button button-secondary" href="#/directory">Browse teams</a></div>
       </div>
-      <div class="hero-art" aria-hidden="true"><span class="hero-number">III</span><div class="hero-ball"><svg viewBox="0 0 100 100"><path d="M10 74C20 48 48 20 76 10c8-3 16 4 13 12-10 28-38 56-66 66-8 3-16-4-13-12Z"/><path d="m22 78 56-56M38 68l-6-6m15-1-6-6m15-1-6-6m15-1-6-6"/></svg></div><span class="hero-art-caption">The DIII community</span></div>
+      <div class="hero-art" aria-hidden="true"><span class="hero-number">III</span><div class="hero-ball"><svg viewBox="0 0 100 100"><path d="M8 70C18 46 48 16 76 8c10-3 18 5 15 15-8 28-38 58-62 68-12 5-24-5-21-16 0-2 0-3 0-5Z" fill="#995333" stroke="#63351f" stroke-width="1.4"/><path d="M12 65 21 74M26 79 35 88M65 12 74 21M79 26 88 35" fill="none" stroke="#f6e9dc" stroke-width="4"/><path d="m23 77 54-54m-41 42-7-7m17-3-7-7m17-3-7-7m17-3-7-7" fill="none" stroke="#fff8ec" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="hero-art-caption">The DIII community</span></div>
     </section>
 
     <div class="home-grid">
