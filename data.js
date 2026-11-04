@@ -72,3 +72,40 @@ const D3_DEMO_GAMES = [
   { dateIndex: 2, note: "Upcoming" },
   { dateIndex: 3, note: "Upcoming" }
 ];
+
+// D3football.com weekly national poll, captured from the Week 9 page.
+// This is a dated snapshot; do not present it as a live feed.
+const D3_FOOTBALL_TOP25 = {
+  week: "2026 Week 9",
+  through: "Through games of Oct. 31, 2026",
+  url: "https://www.d3football.com/top25/2026/week9",
+  entries: [
+    [1,"Wheaton (Ill.)","8-0",613,"-5","1",17],
+    [2,"UW-Platteville","8-0",597,"+8","2",7],
+    [3,"St. John's","8-0",556,"-7","3",0],
+    [4,"UW-Whitewater","8-0",555,"+8","5",1],
+    [5,"North Central (Ill.)","7-1",549,"-5","4",0],
+    [6,"Hardin-Simmons","7-0",494,"-8","6",0],
+    [7,"Endicott","8-0",454,"+3","7",0],
+    [8,"Washington U.","8-0",436,"+1","8",0],
+    [9,"Hope","8-0",387,"+23","9",0],
+    [10,"Cortland","8-0",371,"+12","11",0],
+    [11,"Christopher Newport","8-0",369,"-4","10",0],
+    [12,"Wartburg","6-2",329,"-13","12",0],
+    [13,"Baldwin Wallace","8-0",328,"+38","13",0],
+    [14,"UW-River Falls","6-2",291,"+7","15",0],
+    [15,"Mary Hardin-Baylor","7-1",275,"+29","17",0],
+    [16,"Bethel","6-2",261,"+7","16",0],
+    [17,"DePauw","7-1",191,"+133","25",0],
+    [18,"Trinity (Texas)","7-1",187,"+15","18",0],
+    [19,"Susquehanna","7-1",163,"+47","20",0],
+    [20,"Linfield","6-1",131,"+26","21",0],
+    [21,"Chapman","7-1",130,"+46","22",0],
+    [22,"Utica","7-1",93,"+41","—",0],
+    [23,"John Carroll","6-2",63,"-225","14",0],
+    [24,"Rowan","6-2",57,"-25","23",0],
+    [25,"Calvin","8-0",53,"+32","—",0]
+  ].map(([rank, school, record, points, change, previous, firstPlaceVotes]) => ({ rank, school, record, points, change, previous, firstPlaceVotes })),
+  others: "Mount Union 41; Lake Forest 32; Washington & Jefferson 25; Franklin & Marshall 21; Springfield 21; Trinity (Conn.) 18; Concordia-Moorhead 9; UW-Eau Claire 6; Concordia Wisconsin 4; Heidelberg 4; UW-Stout 3; Berry 2; Ithaca 2; Randolph-Macon 2; Hampden-Sydney 1; Salisbury 1.",
+  dropped: "No. 19 Berry (minus-130); No. 24 Heidelberg (minus-77)."
+};
